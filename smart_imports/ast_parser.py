@@ -2,6 +2,8 @@
 
 import ast
 
+from . import constants as c
+
 
 class Analyzer(ast.NodeVisitor):
 
@@ -10,10 +12,10 @@ class Analyzer(ast.NodeVisitor):
         self.scope = Scope(type=c.SCOPE_TYPE.NORMAL)
 
     def register_variable_get(self, variable):
-        self.scopes[-1].register_variable_get(variable)
+        self.scopes[-1].register_variable_get(variable, c.VARIABLE_STATE.UNINITIALIZED)
 
     def register_variable_set(self, variable):
-        self.scopes[-1].register_variable_set(variable)
+        self.scopes[-1].register_variable_set(variable, c.VARIABLE_STATE.INITIALIZED)
 
     def push_scope(self, type):
         scope = Scope(type)

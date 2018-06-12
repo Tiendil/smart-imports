@@ -5,43 +5,37 @@ from . import constants as c
 
 
 class Scope:
-    __slots__ = ('variables_states', 'type', 'children', 'parent')
+    __slots__ = ('variables', 'type', 'children', 'parent')
 
     def __init__(self, type):
         self.type = type
-        self.variables_states = {}
+        self.variables = {}
         self.children = []
         self.parent = None
 
-    def register_variable_get(self, variable):
-        if variable in self.variables_states:
+    def register_variable(self, variable, state):
+        if variable in self.variables:
             return
 
-        self.variables_states[variable] = c.VARIABLES_STATE.UNINITIALIZED
-
-    def register_variable_set(self, variable):
-        if variable in self.variables_states:
-            return
-
-        self.variables_states[variable] = c.VARIABLES_STATE.INITIALIZED
+        self.variables[variable] = state
 
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
 
-    def find_root(self):
-        if self.parent is None:
-            return self
 
-        return self.parent.find_root()
+def find_root(scope):
+    while scope.parent:
+        scope = scope.parent
 
-    def reversed_branch(self):
-        if self.parent is None:
-            return
+    return scope
 
-        yield self
 
-        yield from self.parent.reversed_branch()
+def reversed_branch(scope):
+
+    while scope:
+        yield scope
+        scope = scope.parent
 
 
 def get_variables_scopes(root_scope):
@@ -71,7 +65,7 @@ def is_variable_defined(variable, scope):
     if variable not in scope.variables:
         return False
 
-    if scope.variables[variable] = c.VARIABLES_STATE.INITIALIZED:
+    if scope.variables[variable] == c.VARIABLES_STATE.INITIALIZED:
         return True
 
     for scope in scope.reversed_branch():
