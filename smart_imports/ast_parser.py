@@ -1,38 +1,13 @@
 
 
 import ast
-import enum
-
-
-class VARIABLE_STATE(enum.Enum):
-    INITIALIZED = 0
-    UNINITIALIZED = 1
-
-
-class Scope:
-    __slots__ = ('variables_states',)
-
-    def __init__(self):
-        self.variables_states = {}
-
-    def register_variable_get(self, variable):
-        if variable in self.variables_states:
-            return
-
-        self.variables_states[variable] = VARIABLES_STATE.UNINITIALIZED
-
-    def register_variable_set(self, variable):
-        if variable in self.variables_states:
-            return
-
-        self.variables_states[variable] = VARIABLES_STATE.INITIALIZED
 
 
 class Analyzer(ast.NodeVisitor):
 
     def __init__(self):
         super().__init__()
-        self.scopes = [Scope()]
+        self.scope = Scope(type=c.SCOPE_TYPE.NORMAL)
 
     def register_variable_get(self, variable):
         self.scopes[-1].register_variable_get(variable)
@@ -40,11 +15,13 @@ class Analyzer(ast.NodeVisitor):
     def register_variable_set(self, variable):
         self.scopes[-1].register_variable_set(variable)
 
-    def push_scope(self):
-        self.scopes.append(Scope())
+    def push_scope(self, type):
+        scope = Scope(type)
+        self.scope.add_child(child)
+        self.scope = scope
 
     def pop_scope(self):
-        self.scopes.pop()
+        self.scope = self.scope.parent
 
     def visit_Name(self, node):
         if not isinstance(node.ctx, ast.Store):
@@ -54,22 +31,22 @@ class Analyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _visit_scope(self, node):
-        self.push_scope()
+    def _visit_scope(self, node, type):
+        self.push_scope(type=type)
         self.generic_visit(node)
         self.pop_scope()
 
     def visit_ListComp(self, node):
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_SetComp(self, node):
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_GeneratorExp(self, node):
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_DictComp(self, node):
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_Import(self, node):
         for alias in node.names:
@@ -89,7 +66,7 @@ class Analyzer(ast.NodeVisitor):
         self.visit_FunctionDef(node)
 
     def visit_Lambda(self, node):
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_arguments(self, node):
         for arg in node.args:
@@ -106,18 +83,10 @@ class Analyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Global(self, node):
-        # TODO: implement
-        self.generic_visit(node)
-
-    def visit_NonLocal(self, node):
-        # TODO: implement
-        self.generic_visit(node)
-
     def visit_ClassDef(self, node):
         self.register_variable_set(node.name)
 
-        self.push_scope()
+        self.push_scope(type=c.SCOPE_TYPE.CLASS)
 
         for keyword in self.node.keywords:
             self.register_variable_set(keyword)
