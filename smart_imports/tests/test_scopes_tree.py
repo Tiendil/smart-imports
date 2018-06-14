@@ -272,4 +272,30 @@ class TestDetermineVariableUsage(unittest.TestCase):
 
 
 class TestSearchCandidatesToImport(unittest.TestCase):
-    pass
+
+    def test(self):
+        scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
+        scope_root.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_root.variables['var_2'] = c.VARIABLE_STATE.INITIALIZED
+
+        scope_median_1 = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
+        scope_median_1.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_median_1.variables['var_3'] = c.VARIABLE_STATE.INITIALIZED
+
+        scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.CLASS)
+        scope_leaf.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+
+        scope_median_2 = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
+        scope_median_2.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_median_2.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+
+        scope_root.add_child(scope_median_1)
+        scope_root.add_child(scope_median_2)
+        scope_median_1.add_child(scope_leaf)
+
+        fully_undefined_variables, partialy_undefined_variables = scopes_tree.search_candidates_to_import(scope_root)
+
+        self.assertEqual(fully_undefined_variables, {'var_1'})
+        self.assertEqual(partialy_undefined_variables, {'var_3'})

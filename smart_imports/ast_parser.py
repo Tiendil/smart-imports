@@ -3,23 +3,30 @@
 import ast
 
 from . import constants as c
+from . import scopes_tree
+
+
+BUILTINS = {'abs', 'dict', 'help', 'min', 'setattr', 'all', 'dir', 'hex', 'next', 'slice', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii', 'enumerate', 'input', 'oct', 'staticmethod', 'bin', 'eval', 'int', 'open', 'str', 'bool', 'exec', 'isinstance', 'ord', 'sum', 'bytearray', 'filter', 'issubclass', 'pow', 'super', 'bytes', 'float', 'iter', 'print', 'tuple', 'callable', 'format', 'len', 'property', 'type', 'chr', 'frozenset', 'list', 'range', 'vars', 'classmethod', 'getattr', 'locals', 'repr', 'zip', 'compile', 'globals', 'map', 'reversed', '__import__', 'complex', 'hasattr', 'max', 'round', ' ', 'delattr', 'hash', 'memoryview', 'set'}
 
 
 class Analyzer(ast.NodeVisitor):
 
     def __init__(self):
         super().__init__()
-        self.scope = Scope(type=c.SCOPE_TYPE.NORMAL)
+        self.scope = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
 
     def register_variable_get(self, variable):
-        self.scopes[-1].register_variable_get(variable, c.VARIABLE_STATE.UNINITIALIZED)
+        if variable in BUILTINS:
+            self.scope.register_variable(variable, c.VARIABLE_STATE.INITIALIZED)
+        else:
+            self.scope.register_variable(variable, c.VARIABLE_STATE.UNINITIALIZED)
 
     def register_variable_set(self, variable):
-        self.scopes[-1].register_variable_set(variable, c.VARIABLE_STATE.INITIALIZED)
+        self.scope.register_variable(variable, c.VARIABLE_STATE.INITIALIZED)
 
     def push_scope(self, type):
-        scope = Scope(type)
-        self.scope.add_child(child)
+        scope = scopes_tree.Scope(type)
+        self.scope.add_child(scope)
         self.scope = scope
 
     def pop_scope(self):
@@ -62,7 +69,7 @@ class Analyzer(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.register_variable_set(node.name)
-        self._visit_scope(node)
+        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
 
     def visit_AsyncFunctionDef(self, node):
         self.visit_FunctionDef(node)
@@ -90,7 +97,7 @@ class Analyzer(ast.NodeVisitor):
 
         self.push_scope(type=c.SCOPE_TYPE.CLASS)
 
-        for keyword in self.node.keywords:
+        for keyword in  node.keywords:
             self.register_variable_set(keyword)
 
         self.generic_visit(node)
