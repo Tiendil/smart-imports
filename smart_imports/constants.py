@@ -16,3 +16,6 @@ class VARIABLE_USAGE_TYPE(enum.Enum):
     FULLY_DEFINED = 0
     PARTIALY_DEFINED = 1
     FULLY_UNDEFINED = 2
+
+
+CONFIG_FILE_NAME = 'smart_imports.json'
