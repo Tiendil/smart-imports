@@ -3,7 +3,8 @@ import os
 import json
 import inspect
 
-from . import constants
+from . import constants as c
+from . import exceptions as e
 
 
 def find_target_module():
@@ -13,31 +14,32 @@ def find_target_module():
             return inspect.getmodule(frame_info.frame)
 
 
-def find_config_file(path, config_name):
+def find_config_file(path, config_name=c.CONFIG_FILE_NAME):
     if not os.path.isdir(path):
         path = os.path.dirname(path)
 
-    while path:
+    while path != '/':
+
         file_name = os.path.join(path, config_name)
 
         if os.path.isfile(file_name):
-            return filename
+            return file_name
 
         path = os.path.dirname(path)
 
     return None
 
 
-def find_config(path):
-    config_path = find_config_file(path, constants.CONFIG_FILE_NAME)
+def load_config(path):
 
-    if config_path is None:
-        return None
+    if not os.path.isfile(path):
+        raise e.ConfigNotFound(path=path)
 
-    with open(config_path) as f:
-        return json.load(f)
-
-    return None
+    with open(path) as f:
+        try:
+            return json.load(f)
+        except ValueError:
+            raise e.ConfigHasWrongFormat(path=path)
 
 
 def determine_full_module_name(path):
@@ -54,12 +56,15 @@ def determine_full_module_name(path):
     if module_name.endswith('.py'):
         module_name = module_name[:-3]
 
-    module_name = module_name.replace('\\', '/')
+    double_separator = os.sep + os.sep
 
-    while module_name[0] == '/':
+    while double_separator in module_name:
+        module_name = module_name.replace(double_separator, os.sep)
+
+    while module_name and module_name[0] == os.sep:
         module_name = module_name[1:]
 
-    while module_name[-1] == '/':
+    while module_name and module_name[-1] == os.sep:
         module_name = module_name[:-1]
 
-    return module_name.replace('/', '.')
+    return module_name.replace(os.sep, '.')
