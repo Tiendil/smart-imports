@@ -65,7 +65,6 @@ class TestGetModuleScopesTree(unittest.TestCase):
                           'z': constants.VARIABLE_STATE.UNINITIALIZED})
 
 
-
 class TestProcessModule(unittest.TestCase):
 
     def test_process_simple(self):

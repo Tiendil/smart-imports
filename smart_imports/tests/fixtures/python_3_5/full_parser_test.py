@@ -24,3 +24,15 @@ class Class(var_12):  # var_12 undefined
 
     def __init__(self):
         super().__init__(var_15+var_13)  # var_13 & var_15 undefined
+
+
+var_16 = [var_17 for var_17 in range(10)]
+var_18 = {var_19 for var_19 in range(10)}
+var_20 = {var_21:var_22 for var_21 in zip(range(10), range(10, 20))}
+var_23 = (var_24 for var_23 in range(10))
+
+
+for var_25 in range(10):
+    pass
+
+    var_26 = var_27

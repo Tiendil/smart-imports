@@ -23,6 +23,12 @@ class Scope:
         self.children.append(child)
         child.parent = self
 
+    def level(self):
+        if self.parent is None:
+            return 0
+
+        return self.parent.level() + 1
+
 
 def find_root(scope):
     while scope.parent:

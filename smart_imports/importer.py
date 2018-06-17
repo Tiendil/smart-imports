@@ -70,5 +70,5 @@ def all(target_module=None):
                    module=target_module,
                    rules=[rules.rule_predefined_names,
                           rules.rule_config,
-                          rules.rule_stdlib,
-                          rules.rule_local_modules])
+                          rules.rule_local_modules,
+                          rules.rule_stdlib])

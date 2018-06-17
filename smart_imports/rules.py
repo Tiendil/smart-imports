@@ -61,11 +61,15 @@ def rule_config(config, module, variable):
     attribute = config['variables'][variable].get('attribute')
     return ImportCommand(module, variable, module_name, attribute)
 
+
 def rule_local_modules(config, module, variable):
 
     package_path = discovering.determine_package_path(module.__file__)
 
     if package_path is None:
+        return None
+
+    if not discovering.has_submodule(package_path, variable):
         return None
 
     parent_module_name = discovering.determine_full_module_name(package_path)

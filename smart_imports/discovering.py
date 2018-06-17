@@ -82,3 +82,8 @@ def determine_package_path(path):
         return None
 
     return os.path.dirname(path)
+
+
+def has_submodule(path, name):
+    return (os.path.isfile(os.path.join(path, name, '__init__.py')) or
+            os.path.isfile(os.path.join(path, name + '.py')))

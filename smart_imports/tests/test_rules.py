@@ -1,14 +1,9 @@
-import os
 import sys
-import uuid
-import tempfile
 import unittest
 
 from unittest import mock
 
 from .. import rules
-from .. import constants as c
-from .. import exceptions as e
 
 
 class TestRuleConfig(unittest.TestCase):
@@ -52,6 +47,9 @@ class TestRuleLocalModules(unittest.TestCase):
         def simple_package_path(path):
             return path
 
+        def simple_has_submodule(path, name):
+            return True
+
         def simple_name(path):
             return path.replace('/', '.')
 
@@ -63,9 +61,10 @@ class TestRuleLocalModules(unittest.TestCase):
 
         with mock.patch('smart_imports.discovering.determine_full_module_name', simple_name):
             with mock.patch('smart_imports.discovering.determine_package_path', simple_package_path):
-                command = rules.rule_local_modules(config={},
-                                                   module=module,
-                                                   variable='y')
+                with mock.patch('smart_imports.discovering.has_submodule', simple_has_submodule):
+                    command = rules.rule_local_modules(config={},
+                                                       module=module,
+                                                       variable='y')
 
         self.assertEqual(command, rules.ImportCommand(target_module=module,
                                                       target_attribute='y',

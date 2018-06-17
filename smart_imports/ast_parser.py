@@ -45,17 +45,34 @@ class Analyzer(ast.NodeVisitor):
         self.generic_visit(node)
         self.pop_scope()
 
+    def _visit_comprehension(self, node):
+        self.push_scope(type=type)
+
+        for generator in node.generators:
+            self.generic_visit(generator)
+
+        if hasattr(node, 'elt'):
+            self.generic_visit(node.elt)
+
+        if hasattr(node, 'key'):
+            self.generic_visit(node.key)
+
+        if hasattr(node, 'value'):
+            self.generic_visit(node.value)
+
+        self.pop_scope()
+
     def visit_ListComp(self, node):
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+        self._visit_comprehension(node)
 
     def visit_SetComp(self, node):
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+        self._visit_comprehension(node)
 
     def visit_GeneratorExp(self, node):
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+        self._visit_comprehension(node)
 
     def visit_DictComp(self, node):
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+        self._visit_comprehension(node)
 
     def visit_Import(self, node):
         for alias in node.names:
@@ -97,7 +114,7 @@ class Analyzer(ast.NodeVisitor):
 
         self.push_scope(type=c.SCOPE_TYPE.CLASS)
 
-        for keyword in  node.keywords:
+        for keyword in node.keywords:
             self.register_variable_set(keyword)
 
         self.generic_visit(node)
