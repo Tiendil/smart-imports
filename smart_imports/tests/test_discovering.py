@@ -154,3 +154,45 @@ class TestDetermineFullModuleName(unittest.TestCase):
                                                                               'not_package',
                                                                               'top_package'))
         self.assertEqual(module_name, 'top_package')
+
+
+class TestDeterminePackagePath(unittest.TestCase):
+
+    def test_is_directory(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+            os.makedirs(path)
+
+            self.assertEqual(discovering.determine_package_path(path),
+                             path)
+
+    def test_not_file_and_not_directory(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+
+            self.assertEqual(discovering.determine_package_path(path),
+                             None)
+
+    def test_init_py(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+
+            os.makedirs(path)
+
+            with open(os.path.join(path,'__init__.py'), 'w') as f:
+                f.write(' ')
+
+            self.assertEqual(discovering.determine_package_path(os.path.join(path,'__init__.py')),
+                             path)
+
+    def test_not_init_py(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+
+            os.makedirs(path)
+
+            with open(os.path.join(path,'code.py'), 'w') as f:
+                f.write(' ')
+
+            self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.py')),
+                             None)

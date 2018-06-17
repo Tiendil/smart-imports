@@ -68,3 +68,17 @@ def determine_full_module_name(path):
         module_name = module_name[:-1]
 
     return module_name.replace(os.sep, '.')
+
+
+def determine_package_path(path):
+
+    if os.path.isdir(path):
+        return path
+
+    if not os.path.isfile(path):
+        return None
+
+    if not path.endswith('__init__.py'):
+        return None
+
+    return os.path.dirname(path)

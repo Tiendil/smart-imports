@@ -1,5 +1,6 @@
 
 import os
+import sys
 import importlib
 
 from . import discovering
@@ -26,6 +27,16 @@ class ImportCommand:
 
         setattr(self.target_module, self.target_attribute, value)
 
+    def __eq__(self, other):
+        return (self.__class__ == other.__class__ and
+                self.target_module == other.target_module and
+                self.target_attribute == other.target_attribute and
+                self.source_module == other.source_module and
+                self.source_attribute == other.source_attribute)
+
+    def __ne__(self, other):
+        return not self.__ne__(other)
+
 
 def rule_config(config, module, variable):
 
@@ -41,8 +52,18 @@ def rule_config(config, module, variable):
     return ImportCommand(module, variable, module_name, attribute)
 
 def rule_local_modules(config, module, variable):
-    module_name = discovering.determine_full_module_name(module.__path__)
-    return ImportCommand(module, variable, '{}.{}'.format(module_name, variable))
+
+    package_path = discovering.determine_package_path(module.__path__)
+
+    if package_path is None:
+        return None
+
+    parent_module_name = discovering.determine_full_module_name(package_path)
+
+    return ImportCommand(target_module=module,
+                         target_attribute=variable,
+                         source_module='{}.{}'.format(parent_module_name, variable),
+                         source_attribute=None)
 
 
 # packages lists for every python version can be found here:
@@ -66,6 +87,10 @@ STDLIB_MODULES = _collect_stdlib_modules()
 
 
 def rule_stdlib(config, module, variable):
+
+    if variable not in STDLIB_MODULES:
+        return None
+
     module_name = STDLIB_MODULES[variable]['module']
     attribute = STDLIB_MODULES[variable].get('attribute')
 
