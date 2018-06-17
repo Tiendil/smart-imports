@@ -111,11 +111,8 @@ def rule_stdlib(config, module, variable):
     return ImportCommand(module, variable, module_name, attribute)
 
 
-PREDEFINED_NAMES = frozenset({'__name__', '__file__', '__doc__', '__annotations__'})
-
-
 def rule_predefined_names(config, module, variable):
-    if variable not in PREDEFINED_NAMES:
-        return None
+    if variable in __builtins__:
+        return NoImportCommand()
 
-    return NoImportCommand()
+    return None

@@ -69,6 +69,6 @@ def all(target_module=None):
     process_module(config=config,
                    module=target_module,
                    rules=[rules.rule_predefined_names,
-                          rules.rule_config,
                           rules.rule_local_modules,
+                          rules.rule_config,
                           rules.rule_stdlib])
