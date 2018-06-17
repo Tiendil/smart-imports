@@ -57,7 +57,7 @@ class TestRuleLocalModules(unittest.TestCase):
 
         class FakeModule:
             def __init__(self):
-                self.__path__ = 'a/b/c'
+                self.__file__ = 'a/b/c'
 
         module = FakeModule()
 
@@ -81,7 +81,7 @@ class TestRuleLocalModules(unittest.TestCase):
 
         class FakeModule:
             def __init__(self):
-                self.__path__ = 'a/b/c'
+                self.__file__ = 'a/b/c'
 
         module = FakeModule()
 
@@ -123,3 +123,15 @@ class TestRuleSTDLIB(unittest.TestCase):
                                                       target_attribute='math',
                                                       source_module='math',
                                                       source_attribute=None))
+
+
+class TestRulePredifinedNames(unittest.TestCase):
+
+    def test_common_name(self):
+        command = rules.rule_predefined_names({}, 'module', 'bla_bla')
+        self.assertEqual(command, None)
+
+    def test_predefined_names(self):
+        for name in {'__name__', '__file__', '__doc__', '__annotations__'}:
+            command = rules.rule_predefined_names({}, 'module', name)
+            self.assertEqual(command, rules.NoImportCommand())

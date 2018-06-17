@@ -18,3 +18,11 @@ class ConfigNotFound(ConfigError):
 
 class ConfigHasWrongFormat(ConfigError):
     MESSAGE = 'config "{path}" not in JSON format'
+
+
+class ImporterError(SmartImportsError):
+    MESSAGE = None
+
+
+class NoImportFound(ImporterError):
+    MESSAGE = 'no suitable imports found for {module} with name {variable}'

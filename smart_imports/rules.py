@@ -16,14 +16,12 @@ class ImportCommand:
         self.source_attribute = source_attribute
 
     def __call__(self):
-        imported_module = __import__(self.source_module,
-                                     globals=self.target_module.__dict__,
-                                     locals=self.target_module.__dict__)
+        imported_module = importlib.import_module(self.source_module)
 
         if self.source_attribute is None:
-            value = self.imported_module
+            value = imported_module
         else:
-            value = getattr(self.imported_module, self.source_attribute)
+            value = getattr(imported_module, self.source_attribute)
 
         setattr(self.target_module, self.target_attribute, value)
 
@@ -38,6 +36,19 @@ class ImportCommand:
         return not self.__ne__(other)
 
 
+class NoImportCommand(ImportCommand):
+    __slots__ = ()
+
+    def __init__(self):
+        super().__init__(target_module=None,
+                         target_attribute=None,
+                         source_module=None,
+                         source_attribute=None)
+
+    def __call__(self):
+        pass
+
+
 def rule_config(config, module, variable):
 
     if 'variables' not in config:
@@ -48,12 +59,11 @@ def rule_config(config, module, variable):
 
     module_name = config['variables'][variable]['module']
     attribute = config['variables'][variable].get('attribute')
-
     return ImportCommand(module, variable, module_name, attribute)
 
 def rule_local_modules(config, module, variable):
 
-    package_path = discovering.determine_package_path(module.__path__)
+    package_path = discovering.determine_package_path(module.__file__)
 
     if package_path is None:
         return None
@@ -95,3 +105,13 @@ def rule_stdlib(config, module, variable):
     attribute = STDLIB_MODULES[variable].get('attribute')
 
     return ImportCommand(module, variable, module_name, attribute)
+
+
+PREDEFINED_NAMES = frozenset({'__name__', '__file__', '__doc__', '__annotations__'})
+
+
+def rule_predefined_names(config, module, variable):
+    if variable not in PREDEFINED_NAMES:
+        return None
+
+    return NoImportCommand()

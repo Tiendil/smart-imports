@@ -3,8 +3,8 @@ import os
 import json
 import inspect
 
-from . import constants as c
-from . import exceptions as e
+from . import constants
+from . import exceptions
 
 
 def find_target_module():
@@ -14,7 +14,7 @@ def find_target_module():
             return inspect.getmodule(frame_info.frame)
 
 
-def find_config_file(path, config_name=c.CONFIG_FILE_NAME):
+def find_config_file(path, config_name=constants.CONFIG_FILE_NAME):
     if not os.path.isdir(path):
         path = os.path.dirname(path)
 
@@ -33,13 +33,13 @@ def find_config_file(path, config_name=c.CONFIG_FILE_NAME):
 def load_config(path):
 
     if not os.path.isfile(path):
-        raise e.ConfigNotFound(path=path)
+        raise exceptions.ConfigNotFound(path=path)
 
     with open(path) as f:
         try:
             return json.load(f)
         except ValueError:
-            raise e.ConfigHasWrongFormat(path=path)
+            raise exceptions.ConfigHasWrongFormat(path=path)
 
 
 def determine_full_module_name(path):
@@ -78,7 +78,7 @@ def determine_package_path(path):
     if not os.path.isfile(path):
         return None
 
-    if not path.endswith('__init__.py'):
+    if not path.endswith('.py'):
         return None
 
     return os.path.dirname(path)

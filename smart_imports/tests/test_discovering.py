@@ -185,7 +185,7 @@ class TestDeterminePackagePath(unittest.TestCase):
             self.assertEqual(discovering.determine_package_path(os.path.join(path,'__init__.py')),
                              path)
 
-    def test_not_init_py(self):
+    def test_py(self):
         with tempfile.TemporaryDirectory() as temp_directory:
             path = os.path.join(temp_directory, 'x', 'y')
 
@@ -195,4 +195,16 @@ class TestDeterminePackagePath(unittest.TestCase):
                 f.write(' ')
 
             self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.py')),
+                             path)
+
+    def test_not_py(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+
+            os.makedirs(path)
+
+            with open(os.path.join(path,'code.xx'), 'w') as f:
+                f.write(' ')
+
+            self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.xx')),
                              None)
