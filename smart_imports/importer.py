@@ -3,16 +3,18 @@ import ast
 import itertools
 
 from . import rules
+from . import config
 from . import ast_parser
 from . import exceptions
 from . import scopes_tree
 from . import discovering
 
 
-def apply_rules(config, module, variable, rules):
+def apply_rules(module_config, module, variable):
 
-    for rule in rules:
-        command = rule(config, module, variable)
+    for rule_name in module_config['rules_order']:
+
+        command = rules.apply(rule_name, module_config['rules'], module, variable)
 
         if command:
             return command
@@ -33,7 +35,7 @@ def get_module_scopes_tree(module_path):
     return analyzer.scope
 
 
-def process_module(config, module, rules):
+def process_module(module_config, module):
 
     root_scope = get_module_scopes_tree(module.__file__)
 
@@ -44,10 +46,9 @@ def process_module(config, module, rules):
     commands = []
 
     for variable in itertools.chain(fully_undefined_variables, partialy_undefined_variables):
-        command = apply_rules(config=config,
+        command = apply_rules(module_config=module_config,
                               module=module,
-                              variable=variable,
-                              rules=rules)
+                              variable=variable)
         commands.append(command)
 
     for command in commands:
@@ -59,16 +60,7 @@ def all(target_module=None):
     if target_module is None:
         target_module = discovering.find_target_module()
 
-    config_path = discovering.find_config_file(target_module.__file__)
+    module_config = config.get(target_module.__file__)
 
-    config = {}
-
-    if config_path is not None:
-        config = discovering.load_config(config_path)
-
-    process_module(config=config,
-                   module=target_module,
-                   rules=[rules.rule_predefined_names,
-                          rules.rule_local_modules,
-                          rules.rule_config,
-                          rules.rule_stdlib])
+    process_module(module_config=module_config,
+                   module=target_module)

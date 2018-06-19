@@ -1,10 +1,12 @@
 
 import os
 import math
+import copy
 import unittest
 import importlib
 
 from .. import rules
+from .. import config
 from .. import importer
 from .. import constants
 from .. import exceptions
@@ -21,28 +23,19 @@ class TestApplyRules(unittest.TestCase):
     def setUp(self):
         self.source_module = 'smart_imports.tests.fake_package.config_variables'
 
-        self.config = {'variables': {'config_variable': {'module': self.source_module}}}
-
-    def test_no_rules(self):
-        with self.assertRaises(exceptions.NoImportFound):
-            importer.apply_rules(config=self.config,
-                                 module=apply_rules_module,
-                                 variable='x',
-                                 rules=[])
+        self.config = copy.deepcopy(config.DEFAULT_CONFIG)
+        self.config['rules']['rule_custom']['variables']['config_variable'] = {'module': self.source_module}
 
     def test_command_not_found(self):
         with self.assertRaises(exceptions.NoImportFound):
-            importer.apply_rules(config=self.config,
+            importer.apply_rules(module_config=self.config,
                                  module=apply_rules_module,
-                                 variable='x',
-                                 rules=[rules.rule_config])
-
+                                 variable='x')
 
     def test_command_found(self):
-        command = importer.apply_rules(config=self.config,
+        command = importer.apply_rules(module_config=self.config,
                                        module=apply_rules_module,
-                                       variable='config_variable',
-                                       rules=[rules.rule_config])
+                                       variable='config_variable')
 
         self.assertEqual(command, rules.ImportCommand(target_module=apply_rules_module,
                                                       target_attribute='config_variable',
@@ -70,9 +63,8 @@ class TestProcessModule(unittest.TestCase):
     def test_process_simple(self):
         self.assertEqual(getattr(process_module_simple_module, 'math', None), None)
 
-        importer.process_module(config={},
-                                module=process_module_simple_module,
-                                rules=[rules.rule_stdlib])
+        importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                module=process_module_simple_module)
 
         self.assertEqual(getattr(process_module_simple_module, 'math'), math)
 

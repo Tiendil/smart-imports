@@ -1,10 +1,6 @@
 
 import os
-import json
 import inspect
-
-from . import constants
-from . import exceptions
 
 
 def find_target_module():
@@ -12,34 +8,6 @@ def find_target_module():
     for frame_info in inspect.stack():
         if frame_info.function == '<module>':
             return inspect.getmodule(frame_info.frame)
-
-
-def find_config_file(path, config_name=constants.CONFIG_FILE_NAME):
-    if not os.path.isdir(path):
-        path = os.path.dirname(path)
-
-    while path != '/':
-
-        file_name = os.path.join(path, config_name)
-
-        if os.path.isfile(file_name):
-            return file_name
-
-        path = os.path.dirname(path)
-
-    return None
-
-
-def load_config(path):
-
-    if not os.path.isfile(path):
-        raise exceptions.ConfigNotFound(path=path)
-
-    with open(path) as f:
-        try:
-            return json.load(f)
-        except ValueError:
-            raise exceptions.ConfigHasWrongFormat(path=path)
 
 
 def determine_full_module_name(path):

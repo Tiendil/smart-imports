@@ -4,24 +4,25 @@ import unittest
 from unittest import mock
 
 from .. import rules
+from .. import exceptions
 
 
-class TestRuleConfig(unittest.TestCase):
+class TestRuleCustom(unittest.TestCase):
 
     def test_no_variables(self):
-        command = rules.rule_config(config={},
+        command = rules.rule_custom(config={},
                                     module='module',
                                     variable='x')
         self.assertEqual(command, None)
 
     def test_no_variable(self):
-        command = rules.rule_config(config={'variables': {'y': {'module': 'z'}}},
+        command = rules.rule_custom(config={'variables': {'y': {'module': 'z'}}},
                                     module='module',
                                     variable='x')
         self.assertEqual(command, None)
 
     def test_only_module(self):
-        command = rules.rule_config(config={'variables': {'y': {'module': 'z'}}},
+        command = rules.rule_custom(config={'variables': {'y': {'module': 'z'}}},
                                     module='module',
                                     variable='y')
         self.assertEqual(command, rules.ImportCommand(target_module='module',
@@ -30,7 +31,7 @@ class TestRuleConfig(unittest.TestCase):
                                                       source_attribute=None))
 
     def test_module_attribute(self):
-        command = rules.rule_config(config={'variables': {'y': {'module': 'z',
+        command = rules.rule_custom(config={'variables': {'y': {'module': 'z',
                                                                 'attribute': 'c'}}},
                                     module='module',
                                     variable='y')
@@ -134,3 +135,61 @@ class TestRulePredifinedNames(unittest.TestCase):
         for name in {'__name__', '__file__', '__doc__', '__annotations__'}:
             command = rules.rule_predefined_names({}, 'module', name)
             self.assertEqual(command, rules.NoImportCommand())
+
+
+class TestDefaultRules(unittest.TestCase):
+
+    def test(self):
+        self.assertEqual(rules.RULES.keys(), {'rule_predefined_names',
+                                              'rule_local_modules',
+                                              'rule_custom',
+                                              'rule_stdlib'})
+
+
+class TestRegister(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        rules.remove('xxx')
+
+    def tearDown(self):
+        super().tearDown()
+        rules.remove('xxx')
+
+    def test_success(self):
+        rules.register('xxx', 'my.rule')
+        self.assertEqual(rules.RULES['xxx'], 'my.rule')
+
+    def test_already_registered(self):
+        rules.register('xxx', 'my.rule')
+
+        with self.assertRaises(exceptions.RuleAlreadyRegistered):
+            rules.register('xxx', 'my.rule')
+
+
+class TestApply(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        rules.remove('xxx')
+
+    def tearDown(self):
+        super().tearDown()
+        rules.remove('xxx')
+
+    def test_no_rule(self):
+        with self.assertRaises(exceptions.RuleNotRegistered):
+            rules.apply(name='xxx',
+                        configs={},
+                        module='module',
+                        variable='variable')
+
+    def test_success(self):
+        rules.register('xxx', lambda *argv, **kwargs: 'yyy')
+
+        command = rules.apply(name='xxx',
+                              configs={'xxx': {}},
+                              module='module',
+                              variable='variable')
+
+        self.assertEqual(command, 'yyy')

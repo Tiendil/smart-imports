@@ -17,7 +17,7 @@ class ConfigNotFound(ConfigError):
 
 
 class ConfigHasWrongFormat(ConfigError):
-    MESSAGE = 'config "{path}" not in JSON format'
+    MESSAGE = 'config "{path}" has wrong format: {message}'
 
 
 class ImporterError(SmartImportsError):
@@ -26,3 +26,15 @@ class ImporterError(SmartImportsError):
 
 class NoImportFound(ImporterError):
     MESSAGE = 'no suitable imports found for {module} with name {variable}'
+
+
+class RulesError(ImporterError):
+    MESSAGE = None
+
+
+class RuleAlreadyRegistered(RulesError):
+    MESSAGE = 'rule "{rule}" has been registered already'
+
+
+class RuleNotRegistered(RulesError):
+    MESSAGE = 'rule "{rule}" has not registered'

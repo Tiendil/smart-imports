@@ -3,7 +3,30 @@ import os
 import sys
 import importlib
 
+from . import exceptions
 from . import discovering
+
+
+RULES = {}
+
+
+def register(name, rule):
+    if name in RULES:
+        raise exceptions.RuleAlreadyRegistered(rule=name)
+
+    RULES[name] = rule
+
+
+def remove(name):
+    if name in RULES:
+        del RULES[name]
+
+
+def apply(name, configs, module, variable):
+    if name not in RULES:
+        raise exceptions.RuleNotRegistered(rule=name)
+
+    return RULES[name](configs[name], module, variable)
 
 
 class ImportCommand:
@@ -49,7 +72,7 @@ class NoImportCommand(ImportCommand):
         pass
 
 
-def rule_config(config, module, variable):
+def rule_custom(config, module, variable):
 
     if 'variables' not in config:
         return None
@@ -111,8 +134,21 @@ def rule_stdlib(config, module, variable):
     return ImportCommand(module, variable, module_name, attribute)
 
 
+PREDEFINED_NAMES = frozenset({'__file__', '__annotations__'})
+
+
 def rule_predefined_names(config, module, variable):
+
+    if variable in PREDEFINED_NAMES:
+        return NoImportCommand()
+
     if variable in __builtins__:
         return NoImportCommand()
 
     return None
+
+
+register('rule_predefined_names', rule_predefined_names)
+register('rule_local_modules', rule_local_modules)
+register('rule_custom', rule_custom)
+register('rule_stdlib', rule_stdlib)
