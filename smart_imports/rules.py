@@ -148,7 +148,47 @@ def rule_predefined_names(config, module, variable):
     return None
 
 
+def rule_prefix(config, module, variable):
+
+    for rule in config['prefixes']:
+
+        prefix = rule['prefix']
+
+        if not variable.startswith(prefix):
+            continue
+
+        return ImportCommand(module, variable, '{}.{}'.format(rule['module'], variable[len(prefix):]), None)
+
+    return None
+
+
+def rule_parent_modules(config, module, variable):
+
+    package_path = discovering.determine_package_path(module.__file__)
+
+    if package_path is None:
+        return None
+
+    for suffix in config['suffixes']:
+        path = package_path.replace(os.sep, '.')
+        if path.endswith(suffix):
+            package_path = package_path[:-len(suffix)]
+            break
+
+    if not discovering.has_submodule(package_path, variable):
+        return None
+
+    parent_module_name = discovering.determine_full_module_name(package_path)
+
+    return ImportCommand(target_module=module,
+                         target_attribute=variable,
+                         source_module='{}.{}'.format(parent_module_name, variable),
+                         source_attribute=None)
+
+
 register('rule_predefined_names', rule_predefined_names)
 register('rule_local_modules', rule_local_modules)
 register('rule_custom', rule_custom)
 register('rule_stdlib', rule_stdlib)
+register('rule_prefix', rule_prefix)
+register('rule_parent_modules', rule_parent_modules)
