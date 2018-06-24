@@ -36,3 +36,7 @@ for var_25 in range(10):
     pass
 
     var_26 = var_27
+
+
+var_28 = {var_29:[var_20[var_31] for var_31 in range(10)]
+          for var_29 in range(10)}

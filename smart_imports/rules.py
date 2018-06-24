@@ -2,6 +2,7 @@
 import os
 import sys
 import importlib
+import importlib.util
 
 from . import exceptions
 from . import discovering
@@ -186,9 +187,37 @@ def rule_parent_modules(config, module, variable):
                          source_attribute=None)
 
 
+def rule_local_from_namespace(config, module, variable):
+
+    package_path = discovering.determine_package_path(module.__file__)
+
+    if package_path is None:
+        return None
+
+    for target, namespace in config['map'].items():
+        path = package_path.replace(os.sep, '.')
+
+        if path.endswith(target):
+            package_path = importlib.util.find_spec(namespace).origin
+            if package_path.endswith('__init__.py'):
+                package_path = os.path.dirname(package_path)
+            break
+
+    if not discovering.has_submodule(package_path, variable):
+        return None
+
+    parent_module_name = discovering.determine_full_module_name(package_path)
+
+    return ImportCommand(target_module=module,
+                         target_attribute=variable,
+                         source_module='{}.{}'.format(parent_module_name, variable),
+                         source_attribute=None)
+
+
 register('rule_predefined_names', rule_predefined_names)
 register('rule_local_modules', rule_local_modules)
 register('rule_custom', rule_custom)
 register('rule_stdlib', rule_stdlib)
 register('rule_prefix', rule_prefix)
 register('rule_parent_modules', rule_parent_modules)
+register('rule_local_from_namespace', rule_local_from_namespace)

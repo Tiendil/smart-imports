@@ -6,9 +6,6 @@ from . import constants as c
 from . import scopes_tree
 
 
-BUILTINS = {'abs', 'dict', 'help', 'min', 'setattr', 'all', 'dir', 'hex', 'next', 'slice', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii', 'enumerate', 'input', 'oct', 'staticmethod', 'bin', 'eval', 'int', 'open', 'str', 'bool', 'exec', 'isinstance', 'ord', 'sum', 'bytearray', 'filter', 'issubclass', 'pow', 'super', 'bytes', 'float', 'iter', 'print', 'tuple', 'callable', 'format', 'len', 'property', 'type', 'chr', 'frozenset', 'list', 'range', 'vars', 'classmethod', 'getattr', 'locals', 'repr', 'zip', 'compile', 'globals', 'map', 'reversed', '__import__', 'complex', 'hasattr', 'max', 'round', ' ', 'delattr', 'hash', 'memoryview', 'set'}
-
-
 class Analyzer(ast.NodeVisitor):
 
     def __init__(self):
@@ -16,10 +13,7 @@ class Analyzer(ast.NodeVisitor):
         self.scope = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
 
     def register_variable_get(self, variable):
-        if variable in BUILTINS:
-            self.scope.register_variable(variable, c.VARIABLE_STATE.INITIALIZED)
-        else:
-            self.scope.register_variable(variable, c.VARIABLE_STATE.UNINITIALIZED)
+        self.scope.register_variable(variable, c.VARIABLE_STATE.UNINITIALIZED)
 
     def register_variable_set(self, variable):
         self.scope.register_variable(variable, c.VARIABLE_STATE.INITIALIZED)
@@ -49,18 +43,25 @@ class Analyzer(ast.NodeVisitor):
         self.push_scope(type=type)
 
         for generator in node.generators:
-            self.generic_visit(generator)
+            self._visit_for_comprehension(generator)
 
         if hasattr(node, 'elt'):
-            self.generic_visit(node.elt)
+            self.visit(node.elt)
 
         if hasattr(node, 'key'):
-            self.generic_visit(node.key)
+            self.visit(node.key)
 
         if hasattr(node, 'value'):
-            self.generic_visit(node.value)
+            self.visit(node.value)
 
         self.pop_scope()
+
+    def _visit_for_comprehension(self, comprehension):
+        self.visit(comprehension.iter)
+        self.visit(comprehension.target)
+
+        for if_expression in comprehension.ifs:
+            self.visit(if_expression)
 
     def visit_ListComp(self, node):
         self._visit_comprehension(node)
