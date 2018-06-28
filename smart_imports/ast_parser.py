@@ -120,3 +120,17 @@ class Analyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
         self.pop_scope()
+
+    def visit_ExceptHandler(self, node):
+        if node.type:
+            self.visit(node.type)
+
+        self.push_scope(type=c.SCOPE_TYPE.NORMAL)
+
+        if node.name:
+            self.register_variable_set(node.name)
+
+        for body_node in node.body:
+            self.visit(body_node)
+
+        self.pop_scope()
