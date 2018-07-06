@@ -1,13 +1,24 @@
 
 import os
+import sys
 import inspect
 
 
 def find_target_module():
+    # can not use inspect.stack() here becaouse of bug, look:
+    # - https://github.com/ipython/ipython/issues/1456/
+    # - https://github.com/ipython/ipython/commit/298fdab5025745cd25f7f48147d8bc4c65be9d4a#diff-fd943bf091e5f13c5ef9b58043fa5129R209
+    # - https://mail.python.org/pipermail/python-list/2010-September/587974.html
+    #
+    # instead emulate simplier behaviour (and, probably, it faster)
 
-    for frame_info in inspect.stack():
-        if frame_info.function == '<module>':
-            return inspect.getmodule(frame_info.frame)
+    frame = sys._getframe(1)
+
+    while frame:
+        if frame.f_code.co_name == '<module>':
+            return inspect.getmodule(frame)
+
+        frame = frame.f_back
 
 
 def determine_full_module_name(path):
