@@ -34,11 +34,6 @@ class Analyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _visit_scope(self, node, type):
-        self.push_scope(type=type)
-        self.generic_visit(node)
-        self.pop_scope()
-
     def _visit_comprehension(self, node):
         self.push_scope(type=type)
 
@@ -87,13 +82,47 @@ class Analyzer(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.register_variable_set(node.name)
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+
+        for decorator in node.decorator_list:
+            self.visit(decorator)
+
+        self.visit_default_arguments(node.args)
+
+        self.push_scope(type=c.SCOPE_TYPE.NORMAL)
+
+        self.visit_arguments(node.args)
+
+        for body_node in node.body:
+            self.visit(body_node)
+
+        self.pop_scope()
 
     def visit_AsyncFunctionDef(self, node):
         self.visit_FunctionDef(node)
 
     def visit_Lambda(self, node):
-        self._visit_scope(node, type=c.SCOPE_TYPE.NORMAL)
+        self.visit_default_arguments(node.args)
+
+        self.push_scope(type=c.SCOPE_TYPE.NORMAL)
+
+        self.visit_arguments(node.args)
+
+        self.visit(node.body)
+
+        self.pop_scope()
+
+    def visit_default_arguments(self, node):
+        for default in node.defaults:
+            if default is None:
+                continue
+
+            self.visit(default)
+
+        for default in node.kw_defaults:
+            if default is None:
+                continue
+
+            self.visit(default)
 
     def visit_arguments(self, node):
         for arg in node.args:
@@ -107,8 +136,6 @@ class Analyzer(ast.NodeVisitor):
 
         if node.kwarg:
             self.register_variable_set(node.kwarg.arg)
-
-        self.generic_visit(node)
 
     def visit_ClassDef(self, node):
         self.register_variable_set(node.name)

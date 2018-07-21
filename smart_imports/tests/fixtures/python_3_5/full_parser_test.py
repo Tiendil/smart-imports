@@ -40,3 +40,18 @@ for var_25 in range(10):
 
 var_28 = {var_29:[var_20[var_31] for var_31 in range(10)]
           for var_29 in range(10)}
+
+
+class OtherClass:
+
+    var_32 = 1
+
+    def var_33(self, func):
+        pass
+
+    @var_33
+    def method_1(self, var_34=var_32):
+        pass
+
+
+var_35 = lambda var_36, var_37=var_38: var_36+var_37+var_39
