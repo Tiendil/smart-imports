@@ -23,11 +23,13 @@ def remove(name):
         del RULES[name]
 
 
-def apply(name, configs, module, variable):
+def apply(config, module, variable):
+    name = config['type']
+
     if name not in RULES:
         raise exceptions.RuleNotRegistered(rule=name)
 
-    return RULES[name](configs[name], module, variable)
+    return RULES[name](config, module, variable)
 
 
 class ImportCommand:

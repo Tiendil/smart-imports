@@ -9,15 +9,11 @@ from . import exceptions
 CONFIGS_CACHE = {}
 
 
-DEFAULT_CONFIG = {'rules_order': ['rule_predefined_names',
-                                  'rule_local_modules',
-                                  'rule_custom',
-                                  'rule_stdlib'],
-
-                  'rules': {'rule_predefined_names': {},
-                            'rule_local_modules': {},
-                            'rule_custom': {'variables': {}},
-                            'rule_stdlib': {}}}
+DEFAULT_CONFIG = {'rules': [{'type': 'rule_predefined_names'},
+                            {'type': 'rule_local_modules'},
+                            {'type': 'rule_custom',
+                             'variables': {}},
+                            {'type': 'rule_stdlib'}]}
 
 
 def get(path, config_name=constants.CONFIG_FILE_NAME):
@@ -61,8 +57,8 @@ def load(path):
     with open(path) as f:
         try:
             config = json.load(f)
-        except ValueError:
-            raise exceptions.ConfigHasWrongFormat(path=path, message='not in JSON format')
+        except ValueError as e:
+            raise exceptions.ConfigHasWrongFormat(path=path, message=str(e))
 
     check(path, config)
 
@@ -70,12 +66,9 @@ def load(path):
 
 
 def check(path, config):
-    if 'rules_order' not in config:
-        raise exceptions.ConfigHasWrongFormat(path=path, message='"rules_order" MUST be defined')
-
     if 'rules' not in config:
         raise exceptions.ConfigHasWrongFormat(path=path, message='"rules" MUST be defined')
 
-    for rule_name in config['rules_order']:
-        if rule_name not in config['rules']:
-            raise exceptions.ConfigHasWrongFormat(path=path, message='"rules" does not contain config for rule "{}"'.format(rule_name))
+    for rule_config in config['rules']:
+        if 'type' not in rule_config:
+            raise exceptions.ConfigHasWrongFormat(path=path, message='rule type does not specified for every rule')

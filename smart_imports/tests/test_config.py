@@ -143,13 +143,6 @@ class TestCheck(unittest.TestCase):
 
             config.load(f.name)
 
-    def test_no_rules_order(self):
-        data = copy.deepcopy(config.DEFAULT_CONFIG)
-        del data['rules_order']
-
-        with self.assertRaises(exceptions.ConfigHasWrongFormat):
-            self.check_load(data)
-
     def test_no_rules(self):
         data = copy.deepcopy(config.DEFAULT_CONFIG)
         del data['rules']
@@ -157,12 +150,5 @@ class TestCheck(unittest.TestCase):
         with self.assertRaises(exceptions.ConfigHasWrongFormat):
             self.check_load(data)
 
-    def test_no_rule_config(self):
-        data = copy.deepcopy(config.DEFAULT_CONFIG)
-        del data['rules']['rule_stdlib']
-
-        with self.assertRaises(exceptions.ConfigHasWrongFormat):
-            self.check_load(data)
-
-    def test_succesS(self):
+    def test_success(self):
         self.check_load(config.DEFAULT_CONFIG)

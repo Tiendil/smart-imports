@@ -24,7 +24,10 @@ class TestApplyRules(unittest.TestCase):
         self.source_module = 'smart_imports.tests.fake_package.config_variables'
 
         self.config = copy.deepcopy(config.DEFAULT_CONFIG)
-        self.config['rules']['rule_custom']['variables']['config_variable'] = {'module': self.source_module}
+
+        for rule_config in self.config['rules']:
+            if rule_config['type'] == 'rule_custom':
+                rule_config['variables']['config_variable'] = {'module': self.source_module}
 
     def test_command_not_found(self):
         with self.assertRaises(exceptions.NoImportFound):

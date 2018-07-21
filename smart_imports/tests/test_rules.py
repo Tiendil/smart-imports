@@ -182,16 +182,14 @@ class TestApply(unittest.TestCase):
 
     def test_no_rule(self):
         with self.assertRaises(exceptions.RuleNotRegistered):
-            rules.apply(name='xxx',
-                        configs={},
+            rules.apply(config={'type': 'xxx'},
                         module='module',
                         variable='variable')
 
     def test_success(self):
         rules.register('xxx', lambda *argv, **kwargs: 'yyy')
 
-        command = rules.apply(name='xxx',
-                              configs={'xxx': {}},
+        command = rules.apply(config={'type': 'xxx'},
                               module='module',
                               variable='variable')
 
