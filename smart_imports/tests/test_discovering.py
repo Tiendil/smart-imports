@@ -138,3 +138,33 @@ class TestDeterminePackagePath(unittest.TestCase):
 
             self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.xx')),
                              None)
+
+
+class TestHasSubmodule(unittest.TestCase):
+
+    def test_package(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+            os.makedirs(path)
+
+            with open(os.path.join(path, '__init__.py'), 'w') as f:
+                f.write(' ')
+
+            self.assertTrue(discovering.has_submodule(os.path.join(temp_directory, 'x'), 'y'))
+
+    def test_module(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+            os.makedirs(path)
+
+            with open(os.path.join(path, 'z.py'), 'w') as f:
+                f.write(' ')
+
+            self.assertTrue(discovering.has_submodule(path, 'z'))
+
+    def test_no_submodule(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            path = os.path.join(temp_directory, 'x', 'y')
+            os.makedirs(path)
+
+            self.assertFalse(discovering.has_submodule(path, 'z'))

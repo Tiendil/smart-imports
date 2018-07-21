@@ -140,10 +140,13 @@ class TestRulePredifinedNames(unittest.TestCase):
 class TestDefaultRules(unittest.TestCase):
 
     def test(self):
-        self.assertEqual(rules.RULES.keys(), {'rule_predefined_names',
-                                              'rule_local_modules',
-                                              'rule_custom',
-                                              'rule_stdlib'})
+        self.assertCountEqual(rules.RULES.keys(), {'rule_parent_modules',
+                                                   'rule_predefined_names',
+                                                   'rule_stdlib',
+                                                   'rule_prefix',
+                                                   'rule_local_from_namespace',
+                                                   'rule_local_modules',
+                                                   'rule_custom'})
 
 
 class TestRegister(unittest.TestCase):
