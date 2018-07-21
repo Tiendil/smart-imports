@@ -1,6 +1,5 @@
 
 import ast
-import itertools
 
 from . import rules
 from . import config
@@ -35,7 +34,11 @@ def get_module_scopes_tree(module_path):
     return analyzer.scope
 
 
-def process_module(module_config, module):
+def variables_processor(variables):
+    return variables
+
+
+def process_module(module_config, module, variables_processor=variables_processor):
 
     root_scope = get_module_scopes_tree(module.__file__)
 
@@ -43,9 +46,16 @@ def process_module(module_config, module):
 
     fully_undefined_variables, partialy_undefined_variables = variables
 
+    # sort variables to fixate import order
+    variables = list(fully_undefined_variables)
+    variables.extend(partialy_undefined_variables)
+    variables.sort()
+
+    variables = variables_processor(variables)
+
     commands = []
 
-    for variable in itertools.chain(fully_undefined_variables, partialy_undefined_variables):
+    for variable in variables:
         command = apply_rules(module_config=module_config,
                               module=module,
                               variable=variable)
@@ -55,7 +65,7 @@ def process_module(module_config, module):
         command()
 
 
-def all(target_module=None):
+def all(target_module=None, variables_processor=variables_processor):
 
     if target_module is None:
         target_module = discovering.find_target_module()
@@ -63,4 +73,5 @@ def all(target_module=None):
     module_config = config.get(target_module.__file__)
 
     process_module(module_config=module_config,
-                   module=target_module)
+                   module=target_module,
+                   variables_processor=variables_processor)
