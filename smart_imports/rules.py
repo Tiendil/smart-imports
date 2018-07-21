@@ -118,7 +118,7 @@ def _collect_stdlib_modules():
         for line in f.readlines():
             names = line.strip().split('.')
             for i in range(len(names)):
-                variables[names[i]] = {'module': '.'.join(names[:i+1])}
+                variables['_'.join(names[:i+1])] = {'module': '.'.join(names[:i+1])}
 
     return variables
 
