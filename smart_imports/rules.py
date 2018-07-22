@@ -59,7 +59,7 @@ class ImportCommand:
                 self.source_attribute == other.source_attribute)
 
     def __ne__(self, other):
-        return not self.__ne__(other)
+        return not self.__eq__(other)
 
 
 class NoImportCommand(ImportCommand):
@@ -154,7 +154,6 @@ def rule_predefined_names(config, module, variable):
 def rule_prefix(config, module, variable):
 
     for rule in config['prefixes']:
-
         prefix = rule['prefix']
 
         if not variable.startswith(prefix):
@@ -165,55 +164,67 @@ def rule_prefix(config, module, variable):
     return None
 
 
-def rule_parent_modules(config, module, variable):
+def rule_local_modules_from_parent(config, module, variable):
 
     package_path = discovering.determine_package_path(module.__file__)
 
     if package_path is None:
         return None
+
+    path = package_path.replace(os.sep, '.')
 
     for suffix in config['suffixes']:
-        path = package_path.replace(os.sep, '.')
-        if path.endswith(suffix):
-            package_path = package_path[:-len(suffix)]
-            break
 
-    if not discovering.has_submodule(package_path, variable):
-        return None
+        if not path.endswith(suffix):
+            continue
 
-    parent_module_name = discovering.determine_full_module_name(package_path)
+        base_package_path = package_path[:-len(suffix)]
 
-    return ImportCommand(target_module=module,
-                         target_attribute=variable,
-                         source_module='{}.{}'.format(parent_module_name, variable),
-                         source_attribute=None)
+        if not discovering.has_submodule(base_package_path, variable):
+            continue
+
+        parent_module_name = discovering.determine_full_module_name(base_package_path)
+
+        return ImportCommand(target_module=module,
+                             target_attribute=variable,
+                             source_module='{}.{}'.format(parent_module_name, variable),
+                             source_attribute=None)
 
 
-def rule_local_from_namespace(config, module, variable):
+def rule_local_modules_from_namespace(config, module, variable):
 
     package_path = discovering.determine_package_path(module.__file__)
+
+    full_package_name = discovering.determine_full_module_name(package_path)
 
     if package_path is None:
         return None
 
-    for target, namespace in config['map'].items():
-        path = package_path.replace(os.sep, '.')
+    for target, namespaces in config['map'].items():
+        for namespace in namespaces:
 
-        if path.endswith(target):
-            package_path = importlib.util.find_spec(namespace).origin
-            if package_path.endswith('__init__.py'):
-                package_path = os.path.dirname(package_path)
-            break
+            if full_package_name != target:
+                continue
 
-    if not discovering.has_submodule(package_path, variable):
-        return None
+            spec = importlib.util.find_spec(namespace)
 
-    parent_module_name = discovering.determine_full_module_name(package_path)
+            if spec is None:
+                continue
 
-    return ImportCommand(target_module=module,
-                         target_attribute=variable,
-                         source_module='{}.{}'.format(parent_module_name, variable),
-                         source_attribute=None)
+            namespace_package_path = importlib.util.find_spec(namespace).origin
+
+            if namespace_package_path.endswith('__init__.py'):
+                namespace_package_path = os.path.dirname(namespace_package_path)
+
+            if not discovering.has_submodule(namespace_package_path, variable):
+                continue
+
+            parent_module_name = discovering.determine_full_module_name(namespace_package_path)
+
+            return ImportCommand(target_module=module,
+                                 target_attribute=variable,
+                                 source_module='{}.{}'.format(parent_module_name, variable),
+                                 source_attribute=None)
 
 
 register('rule_predefined_names', rule_predefined_names)
@@ -221,5 +232,5 @@ register('rule_local_modules', rule_local_modules)
 register('rule_custom', rule_custom)
 register('rule_stdlib', rule_stdlib)
 register('rule_prefix', rule_prefix)
-register('rule_parent_modules', rule_parent_modules)
-register('rule_local_from_namespace', rule_local_from_namespace)
+register('rule_local_modules_from_parent', rule_local_modules_from_parent)
+register('rule_local_modules_from_namespace', rule_local_modules_from_namespace)
