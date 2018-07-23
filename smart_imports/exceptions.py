@@ -25,7 +25,7 @@ class ImporterError(SmartImportsError):
 
 
 class NoImportFound(ImporterError):
-    MESSAGE = 'no suitable imports found for {module} with name {variable}'
+    MESSAGE = 'can not find import rule for variable "{variable}" in module "{module}", file: {path}'
 
 
 class RulesError(ImporterError):

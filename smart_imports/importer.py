@@ -18,7 +18,9 @@ def apply_rules(module_config, module, variable):
         if command:
             return command
 
-    raise exceptions.NoImportFound(module=module, variable=variable)
+    raise exceptions.NoImportFound(variable=variable,
+                                   module=module.__name__,
+                                   path=module.__file__)
 
 
 def get_module_scopes_tree(module_path):
