@@ -39,6 +39,14 @@ class TestAnalyzer(unittest.TestCase):
                           'var_27',
                           'var_38',
                           'var_39',
+                          'var_42',
+                          'var_44',
+                          'var_47',
+                          'var_48',
+                          'var_50',
+                          'var_51',
+                          'var_53',
+                          'var_55',
                           'super',
                           'abs',
                           'range',
@@ -46,4 +54,5 @@ class TestAnalyzer(unittest.TestCase):
 
         self.assertEqual(partialy_undefined_variables,
                          {'var_9',
-                          'var_13'})
+                          'var_13',
+                          'var_46'})

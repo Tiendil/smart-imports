@@ -55,3 +55,20 @@ class OtherClass:
 
 
 var_35 = lambda var_36, var_37=var_38: var_36+var_37+var_39
+
+
+var_40 = [var_41 + var_42 + var_43
+          for var_41, var_43 in var_35
+          if var_43 and var_44]
+
+
+{(var_45, var_46)
+ for var_45 in {(var_46, var_47)
+                for var_46 in var_48}}
+
+
+try:
+    var_49 = var_50
+except var_51 as var_52:
+    var_53(var_50, var_52, var_51, var_49)
+    raise var_55
