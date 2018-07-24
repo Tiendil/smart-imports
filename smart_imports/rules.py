@@ -1,6 +1,7 @@
 
 import os
 import sys
+import pkgutil
 import importlib
 import importlib.util
 
@@ -88,21 +89,29 @@ def rule_custom(config, module, variable):
     return ImportCommand(module, variable, module_name, attribute)
 
 
+LOCAL_MODULES_CACHE = {}
+
+
 def rule_local_modules(config, module, variable):
 
-    package_path = discovering.determine_package_path(module.__file__)
+    package_name = module.__package__
 
-    if package_path is None:
+    if package_name not in LOCAL_MODULES_CACHE:
+        parent = sys.modules[package_name]
+
+        local_modules = set()
+
+        for module_finder, name, ispkg in pkgutil.iter_modules(path=parent.__path__):
+            local_modules.add(name)
+
+        LOCAL_MODULES_CACHE[package_name] = frozenset(local_modules)
+
+    if variable not in LOCAL_MODULES_CACHE[package_name]:
         return None
-
-    if not discovering.has_submodule(package_path, variable):
-        return None
-
-    parent_module_name = discovering.determine_full_module_name(package_path)
 
     return ImportCommand(target_module=module,
                          target_attribute=variable,
-                         source_module='{}.{}'.format(parent_module_name, variable),
+                         source_module='{}.{}'.format(package_name, variable),
                          source_attribute=None)
 
 
@@ -166,64 +175,51 @@ def rule_prefix(config, module, variable):
 
 def rule_local_modules_from_parent(config, module, variable):
 
-    package_path = discovering.determine_package_path(module.__file__)
-
-    if package_path is None:
-        return None
-
-    path = package_path.replace(os.sep, '.')
+    package_name = module.__package__
 
     for suffix in config['suffixes']:
 
-        if not path.endswith(suffix):
+        if not package_name.endswith(suffix):
             continue
 
-        base_package_path = package_path[:-len(suffix)]
+        base_package_name = package_name[:-len(suffix)]
 
-        if not discovering.has_submodule(base_package_path, variable):
+        source_module = '{}.{}'.format(base_package_name, variable)
+
+        if discovering.find_spec(source_module) is None:
             continue
-
-        parent_module_name = discovering.determine_full_module_name(base_package_path)
 
         return ImportCommand(target_module=module,
                              target_attribute=variable,
-                             source_module='{}.{}'.format(parent_module_name, variable),
+                             source_module=source_module,
                              source_attribute=None)
 
 
 def rule_local_modules_from_namespace(config, module, variable):
 
-    package_path = discovering.determine_package_path(module.__file__)
-
-    full_package_name = discovering.determine_full_module_name(package_path)
-
-    if package_path is None:
-        return None
+    package_name = module.__package__
 
     for target, namespaces in config['map'].items():
         for namespace in namespaces:
 
-            if full_package_name != target:
+            if package_name != target:
                 continue
 
-            spec = importlib.util.find_spec(namespace)
+            spec = discovering.find_spec(namespace)
 
             if spec is None:
                 continue
 
-            namespace_package_path = importlib.util.find_spec(namespace).origin
+            namespace_package = spec.parent
 
-            if namespace_package_path.endswith('__init__.py'):
-                namespace_package_path = os.path.dirname(namespace_package_path)
+            source_module = '{}.{}'.format(namespace_package, variable)
 
-            if not discovering.has_submodule(namespace_package_path, variable):
+            if discovering.find_spec(source_module) is None:
                 continue
-
-            parent_module_name = discovering.determine_full_module_name(namespace_package_path)
 
             return ImportCommand(target_module=module,
                                  target_attribute=variable,
-                                 source_module='{}.{}'.format(parent_module_name, variable),
+                                 source_module=source_module,
                                  source_attribute=None)
 
 

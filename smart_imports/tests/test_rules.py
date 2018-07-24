@@ -1,32 +1,12 @@
 
 import os
 import sys
-import types
-import tempfile
 import unittest
-import contextlib
-
-from unittest import mock
+import importlib
 
 from .. import rules
+from .. import helpers
 from .. import exceptions
-
-
-def unload_test_packages():
-    for package_name in ['a']:
-        for key, value in list(sys.modules.items()):
-            if (key == package_name or key.startswith(package_name+'.')) and isinstance(value, types.ModuleType):
-                del sys.modules[key]
-
-
-@contextlib.contextmanager
-def test_directory():
-    unload_test_packages()
-
-    with tempfile.TemporaryDirectory() as temp_directory:
-        sys.path.append(temp_directory)
-        yield temp_directory
-        sys.path.pop()
 
 
 class TestRuleCustom(unittest.TestCase):
@@ -65,55 +45,47 @@ class TestRuleCustom(unittest.TestCase):
 
 class TestRuleLocalModules(unittest.TestCase):
 
+    def prepair_modules(self, base_directory):
+        os.makedirs(os.path.join(base_directory, 'a', 'b', 'c'))
+
+        with open(os.path.join(base_directory, 'a', '__init__.py'), 'w') as f:
+            f.write(' ')
+
+        with open(os.path.join(base_directory, 'a', 'x.py'), 'w') as f:
+            f.write(' ')
+
+        with open(os.path.join(base_directory, 'a', 'b', '__init__.py'), 'w') as f:
+            f.write(' ')
+
+        with open(os.path.join(base_directory, 'a', 'b', 'y.py'), 'w') as f:
+            f.write(' ')
+
     def test_module_found(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-        def simple_package_path(path):
-            return path
+            module = importlib.import_module('a.b')
 
-        def simple_has_submodule(path, name):
-            return True
+            command = rules.rule_local_modules(config={},
+                                               module=module,
+                                               variable='y')
 
-        def simple_name(path):
-            return path.replace('/', '.')
-
-        class FakeModule:
-            def __init__(self):
-                self.__file__ = 'a/b/c'
-
-        module = FakeModule()
-
-        with mock.patch('smart_imports.discovering.determine_full_module_name', simple_name):
-            with mock.patch('smart_imports.discovering.determine_package_path', simple_package_path):
-                with mock.patch('smart_imports.discovering.has_submodule', simple_has_submodule):
-                    command = rules.rule_local_modules(config={},
-                                                       module=module,
-                                                       variable='y')
-
-        self.assertEqual(command, rules.ImportCommand(target_module=module,
-                                                      target_attribute='y',
-                                                      source_module='a.b.c.y',
-                                                      source_attribute=None))
+            self.assertEqual(command, rules.ImportCommand(target_module=module,
+                                                          target_attribute='y',
+                                                          source_module='a.b.y',
+                                                          source_attribute=None))
 
     def test_package_path_not_found(self):
-        def simple_package_path(path):
-            return None
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-        def simple_name(path):
-            return path.replace('/', '.')
+            module = importlib.import_module('a.b')
 
-        class FakeModule:
-            def __init__(self):
-                self.__file__ = 'a/b/c'
+            command = rules.rule_local_modules(config={},
+                                               module=module,
+                                               variable='x')
 
-        module = FakeModule()
-
-        with mock.patch('smart_imports.discovering.determine_full_module_name', simple_name):
-            with mock.patch('smart_imports.discovering.determine_package_path', simple_package_path):
-                command = rules.rule_local_modules(config={},
-                                                   module=module,
-                                                   variable='y')
-
-        self.assertEqual(command, None)
+            self.assertEqual(command, None)
 
 
 class TestSTDLIBModules(unittest.TestCase):
@@ -220,29 +192,22 @@ class TestRuleLocalModulesFromParent(unittest.TestCase):
         with open(os.path.join(base_directory, 'a', 'b', 'c', 'z.py'), 'w') as f:
             f.write(' ')
 
-    def test_no_module_found(self):
-        with test_directory() as temp_directory:
-            self.prepair_modules(temp_directory)
-
-            command = rules.rule_local_modules_from_parent(config=self.config,
-                                                           module=mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'q.py')),
-                                                           variable='xxx')
-            self.assertEqual(command, None)
-
     def test_no_parents_found(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
+            module = importlib.import_module('a.b.y')
+
             command = rules.rule_local_modules_from_parent(config=self.config,
-                                                           module=mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'y.py')),
+                                                           module=module,
                                                            variable='xxx')
             self.assertEqual(command, None)
 
     def test_parents_found(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'c', 'z.py'))
+            module = importlib.import_module('a.b.c.z')
 
             command = rules.rule_local_modules_from_parent(config=self.config,
                                                            module=module,
@@ -254,10 +219,10 @@ class TestRuleLocalModulesFromParent(unittest.TestCase):
                                                           source_attribute=None))
 
     def test_parents_found__complex(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'c', 'z.py'))
+            module = importlib.import_module('a.b.c.z')
 
             command = rules.rule_local_modules_from_parent(config=self.config,
                                                            module=module,
@@ -298,10 +263,10 @@ class TestRuleLocalModulesFromNamespace(unittest.TestCase):
             f.write(' ')
 
     def test_no_module_found(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'x.py'))
+            module = importlib.import_module('a.x')
 
             command = rules.rule_local_modules_from_namespace(config=self.config,
                                                               module=module,
@@ -310,10 +275,10 @@ class TestRuleLocalModulesFromNamespace(unittest.TestCase):
             self.assertEqual(command, None)
 
     def test_no_relations_found(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'y.py'))
+            module = importlib.import_module('a.b.y')
 
             command = rules.rule_local_modules_from_namespace(config=self.config,
                                                               module=module,
@@ -322,10 +287,10 @@ class TestRuleLocalModulesFromNamespace(unittest.TestCase):
             self.assertEqual(command, None)
 
     def test_relation_found(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'b', 'y.py'))
+            module = importlib.import_module('a.b.y')
 
             command = rules.rule_local_modules_from_namespace(config=self.config,
                                                               module=module,
@@ -337,10 +302,10 @@ class TestRuleLocalModulesFromNamespace(unittest.TestCase):
                                                           source_attribute=None))
 
     def test_relation_found__second_relation(self):
-        with test_directory() as temp_directory:
+        with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
 
-            module = mock.Mock(__file__=os.path.join(temp_directory, 'a', 'c', 'z.py'))
+            module = importlib.import_module('a.c.z')
 
             command = rules.rule_local_modules_from_namespace(config=self.config,
                                                               module=module,

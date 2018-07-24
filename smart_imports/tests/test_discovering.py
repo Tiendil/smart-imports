@@ -1,170 +1,66 @@
 
 import os
-import tempfile
 import unittest
 
+from .. import helpers
 from .. import discovering
 
 
-class TestDetermineFullModuleName(unittest.TestCase):
+class TestFindSpec(unittest.TestCase):
 
-    def prepair_data(self, temp_directory):
-        path = os.path.join(temp_directory,
-                            'not_package',
-                            'top_package',
-                            'mid_package',
-                            'leaf_package')
-        os.makedirs(path)
+    def prepair_modules(self, base_directory):
+        os.makedirs(os.path.join(base_directory, 'a', 'b', 'c'))
 
-        with open(os.path.join(temp_directory,
-                               'not_package',
-                               'top_package',
-                               '__init__.py'), 'w') as f:
+        with open(os.path.join(base_directory, 'a', '__init__.py'), 'w') as f:
             f.write(' ')
 
-        with open(os.path.join(temp_directory,
-                               'not_package',
-                               'top_package',
-                               'mid_package',
-                               '__init__.py'), 'w') as f:
+        with open(os.path.join(base_directory, 'a', 'x.py'), 'w') as f:
             f.write(' ')
 
-        with open(os.path.join(temp_directory,
-                               'not_package',
-                               'top_package',
-                               'mid_package',
-                               'leaf_package',
-                               '__init__.py'), 'w') as f:
+        with open(os.path.join(base_directory, 'a', 'b', '__init__.py'), 'w') as f:
             f.write(' ')
 
-        with open(os.path.join(temp_directory,
-                               'not_package',
-                               'top_package',
-                               'mid_package',
-                               'leaf_package',
-                               'code.py'), 'w') as f:
+        with open(os.path.join(base_directory, 'a', 'b', 'y.py'), 'w') as f:
             f.write(' ')
 
-        return path
+    def test_no_spec(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-    def test_not_directory(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            self.prepair_data(temp_directory)
-            module_name = discovering.determine_full_module_name(os.path.join(temp_directory,
-                                                                              'not_package',
-                                                                              'top_package',
-                                                                              'mid_package',
-                                                                              'leaf_package',
-                                                                              'code.py'))
-        self.assertEqual(module_name, 'top_package.mid_package.leaf_package.code')
+            spec = discovering.find_spec('a.c')
 
-    def test_directory(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            self.prepair_data(temp_directory)
-            module_name = discovering.determine_full_module_name(os.path.join(temp_directory,
-                                                                              'not_package',
-                                                                              'top_package',
-                                                                              'mid_package'))
-        self.assertEqual(module_name, 'top_package.mid_package')
+            self.assertEqual(spec, None)
+            self.assertEqual(discovering.SPEC_CACHE, {'a.c': None})
 
-    def test_separators(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            self.prepair_data(temp_directory)
-            path = os.path.join(temp_directory,
-                                'not_package',
-                                'top_package',
-                                'mid_package')
-            module_name = discovering.determine_full_module_name('///' + path +'///')
-        self.assertEqual(module_name, 'top_package.mid_package')
+    def test_spec_found(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-    def test_top_package(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            self.prepair_data(temp_directory)
-            module_name = discovering.determine_full_module_name(os.path.join(temp_directory,
-                                                                              'not_package',
-                                                                              'top_package'))
-        self.assertEqual(module_name, 'top_package')
+            spec = discovering.find_spec('a.b')
 
+            self.assertEqual(spec.name, 'a.b')
+            self.assertEqual(discovering.SPEC_CACHE, {'a.b': spec})
 
-class TestDeterminePackagePath(unittest.TestCase):
+    def test_spec_from_cache(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-    def test_is_directory(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-            os.makedirs(path)
+            spec_1 = discovering.find_spec('a.b')
+            spec_2 = discovering.find_spec('a.b')
 
-            self.assertEqual(discovering.determine_package_path(path),
-                             path)
+            self.assertEqual(spec_1.name, 'a.b')
+            self.assertEqual(discovering.SPEC_CACHE, {'a.b': spec_1})
 
-    def test_not_file_and_not_directory(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
+            self.assertTrue(spec_1 is spec_2)
 
-            self.assertEqual(discovering.determine_package_path(path),
-                             None)
+    def test_multiple_modules(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
 
-    def test_init_py(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
+            spec_1 = discovering.find_spec('a.b')
+            spec_2 = discovering.find_spec('a.x')
 
-            os.makedirs(path)
-
-            with open(os.path.join(path,'__init__.py'), 'w') as f:
-                f.write(' ')
-
-            self.assertEqual(discovering.determine_package_path(os.path.join(path,'__init__.py')),
-                             path)
-
-    def test_py(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-
-            os.makedirs(path)
-
-            with open(os.path.join(path,'code.py'), 'w') as f:
-                f.write(' ')
-
-            self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.py')),
-                             path)
-
-    def test_not_py(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-
-            os.makedirs(path)
-
-            with open(os.path.join(path,'code.xx'), 'w') as f:
-                f.write(' ')
-
-            self.assertEqual(discovering.determine_package_path(os.path.join(path,'code.xx')),
-                             None)
-
-
-class TestHasSubmodule(unittest.TestCase):
-
-    def test_package(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-            os.makedirs(path)
-
-            with open(os.path.join(path, '__init__.py'), 'w') as f:
-                f.write(' ')
-
-            self.assertTrue(discovering.has_submodule(os.path.join(temp_directory, 'x'), 'y'))
-
-    def test_module(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-            os.makedirs(path)
-
-            with open(os.path.join(path, 'z.py'), 'w') as f:
-                f.write(' ')
-
-            self.assertTrue(discovering.has_submodule(path, 'z'))
-
-    def test_no_submodule(self):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            path = os.path.join(temp_directory, 'x', 'y')
-            os.makedirs(path)
-
-            self.assertFalse(discovering.has_submodule(path, 'z'))
+            self.assertEqual(spec_1.name, 'a.b')
+            self.assertEqual(spec_2.name, 'a.x')
+            self.assertEqual(discovering.SPEC_CACHE, {'a.b': spec_1,
+                                                      'a.x': spec_2})

@@ -32,8 +32,6 @@ class Analyzer(ast.NodeVisitor):
         else:
             self.register_variable_set(node.id)
 
-        self.generic_visit(node)
-
     def _visit_comprehension(self, node):
         self.push_scope(type=type)
 
