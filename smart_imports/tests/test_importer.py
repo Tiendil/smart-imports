@@ -2,11 +2,14 @@
 import os
 import math
 import copy
+import json
 import unittest
 import importlib
+import subprocess
 
 from .. import rules
 from .. import config
+from .. import helpers
 from .. import importer
 from .. import constants
 from .. import exceptions
@@ -96,3 +99,37 @@ class TestAll(unittest.TestCase):
         self.assertIn('string', globals())
 
         self.assertEqual(string.digits, '0123456789')
+
+
+class TestSimpleScript(unittest.TestCase):
+
+    def prepair_modules(self, base_directory):
+        os.makedirs(os.path.join(base_directory, 'a', 'b', 'c'))
+
+        script = '''
+import smart_imports
+
+smart_imports.all()
+
+myprint((__name__, datetime.datetime.now()))
+        '''
+
+        with open(os.path.join(base_directory, 'a.py'), 'w') as f:
+            f.write(script)
+
+        config = {'rules': [{'type': 'rule_predefined_names'},
+                            {'type': 'rule_stdlib'},
+                            {'type': 'rule_custom',
+                             'variables': {'myprint': {'module': 'pprint', 'attribute': 'pprint'}}}]}
+
+        with open(os.path.join(base_directory, 'smart_imports.json'), 'w') as f:
+            f.write(json.dumps(config))
+
+    def test(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
+
+            output = subprocess.check_output(['python', os.path.join(temp_directory, 'a.py')])
+
+            self.assertIn(b"'__main__'", output)
+            self.assertIn(b"datetime.datetime", output)
