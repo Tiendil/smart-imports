@@ -25,11 +25,11 @@ class TestApplyRules(unittest.TestCase):
     def setUp(self):
         self.source_module = 'smart_imports.tests.fake_package.config_variables'
 
-        self.config = {'rules': [{'type': 'rule_predefined_names'},
-                                 {'type': 'rule_local_modules'},
-                                 {'type': 'rule_custom',
+        self.config = {'rules': [{'type': 'rule_custom',
                                   'variables': {'config_variable': {'module': self.source_module}}},
-                                 {'type': 'rule_stdlib'}]}
+                                 {'type': 'rule_local_modules'},
+                                 {'type': 'rule_stdlib'},
+                                 {'type': 'rule_predefined_names'}]}
 
     def test_command_not_found(self):
         with self.assertRaises(exceptions.NoImportFound):
@@ -45,6 +45,21 @@ class TestApplyRules(unittest.TestCase):
         self.assertEqual(command, rules.ImportCommand(target_module=apply_rules_module,
                                                       target_attribute='config_variable',
                                                       source_module=self.source_module,
+                                                      source_attribute=None))
+
+    def test_rules_priority(self):
+        config = {'rules': [{'type': 'rule_custom',
+                             'variables': {'var_1': {'module': 'math'}}},
+                            {'type': 'rule_custom',
+                             'variables': {'var_1': {'module': 'json'}}}]}
+
+        command = importer.apply_rules(module_config=config,
+                                       module=apply_rules_module,
+                                       variable='var_1')
+
+        self.assertEqual(command, rules.ImportCommand(target_module=apply_rules_module,
+                                                      target_attribute='var_1',
+                                                      source_module='math',
                                                       source_attribute=None))
 
 
