@@ -1,7 +1,6 @@
 
 import os
 import math
-import copy
 import json
 import unittest
 import importlib
@@ -26,11 +25,11 @@ class TestApplyRules(unittest.TestCase):
     def setUp(self):
         self.source_module = 'smart_imports.tests.fake_package.config_variables'
 
-        self.config = copy.deepcopy(config.DEFAULT_CONFIG)
-
-        for rule_config in self.config['rules']:
-            if rule_config['type'] == 'rule_custom':
-                rule_config['variables']['config_variable'] = {'module': self.source_module}
+        self.config = {'rules': [{'type': 'rule_predefined_names'},
+                                 {'type': 'rule_local_modules'},
+                                 {'type': 'rule_custom',
+                                  'variables': {'config_variable': {'module': self.source_module}}},
+                                 {'type': 'rule_stdlib'}]}
 
     def test_command_not_found(self):
         with self.assertRaises(exceptions.NoImportFound):

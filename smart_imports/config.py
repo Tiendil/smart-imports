@@ -9,11 +9,9 @@ from . import exceptions
 CONFIGS_CACHE = {}
 
 
-DEFAULT_CONFIG = {'rules': [{'type': 'rule_predefined_names'},
-                            {'type': 'rule_local_modules'},
-                            {'type': 'rule_custom',
-                             'variables': {}},
-                            {'type': 'rule_stdlib'}]}
+DEFAULT_CONFIG = {'rules': [{'type': 'rule_local_modules'},
+                            {'type': 'rule_stdlib'},
+                            {'type': 'rule_predefined_names'}]}
 
 
 def get(path, config_name=constants.CONFIG_FILE_NAME):
