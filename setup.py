@@ -1,4 +1,6 @@
 
+import setuptools
+
 setuptools.setup(
     name='smart_imports',
     version='0.1.0',
