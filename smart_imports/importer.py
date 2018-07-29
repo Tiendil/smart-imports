@@ -24,7 +24,7 @@ def apply_rules(module_config, module, variable):
 
 
 def get_module_scopes_tree(module_path):
-    with open(module_path) as f:
+    with open(module_path, encoding='utf-8') as f:
         code = f.read()
 
     tree = ast.parse(code)

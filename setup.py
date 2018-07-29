@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='smart_imports',
-    version='0.1.0',
+    version='0.1.1',
     description='automatic importing for Python modules',
     url='https://github.com/Tiendil/smart-imports',
     author='Aleksey Yeletsky <Tiendil>',
