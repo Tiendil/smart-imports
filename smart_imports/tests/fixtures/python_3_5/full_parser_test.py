@@ -72,3 +72,12 @@ try:
 except var_51 as var_52:
     var_53(var_50, var_52, var_51, var_49)
     raise var_55
+
+
+def function_3():
+    var_56 = 1
+
+    def function_4():
+        print(var_56)  # defined
+
+    return function_4

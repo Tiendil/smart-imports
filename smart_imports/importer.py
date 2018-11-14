@@ -18,9 +18,7 @@ def apply_rules(module_config, module, variable):
         if command:
             return command
 
-    raise exceptions.NoImportFound(variable=variable,
-                                   module=module.__name__,
-                                   path=module.__file__)
+    return None
 
 
 def get_module_scopes_tree(module_path):
@@ -41,16 +39,16 @@ def variables_processor(variables):
 
 
 def process_module(module_config, module, variables_processor=variables_processor):
-
     root_scope = get_module_scopes_tree(module.__file__)
 
     variables = scopes_tree.search_candidates_to_import(root_scope)
 
-    fully_undefined_variables, partialy_undefined_variables = variables
+    fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
-    # sort variables to fixate import order
     variables = list(fully_undefined_variables)
     variables.extend(partialy_undefined_variables)
+
+    # sort variables to fixate import order
     variables.sort()
 
     variables = variables_processor(variables)
@@ -61,6 +59,15 @@ def process_module(module_config, module, variables_processor=variables_processo
         command = apply_rules(module_config=module_config,
                               module=module,
                               variable=variable)
+
+        if command is None:
+            undefined_lines = scopes_tree.search_undefined_variable_lines(variable, variables_scopes[variable])
+
+            raise exceptions.NoImportFound(variable=variable,
+                                           module=module.__name__,
+                                           path=module.__file__,
+                                           lines=undefined_lines)
+
         commands.append(command)
 
     for command in commands:

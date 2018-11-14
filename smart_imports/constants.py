@@ -5,6 +5,7 @@ import enum
 class SCOPE_TYPE(enum.Enum):
     NORMAL = 0
     CLASS = 1
+    COMPREHENSION = 2
 
 
 class VARIABLE_STATE(enum.Enum):

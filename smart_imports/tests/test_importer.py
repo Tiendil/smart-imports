@@ -12,6 +12,7 @@ from .. import helpers
 from .. import importer
 from .. import constants
 from .. import exceptions
+from .. import scopes_tree
 
 from .fake_package import apply_rules as apply_rules_module
 from .fake_package import process_module_simple as process_module_simple_module
@@ -32,10 +33,10 @@ class TestApplyRules(unittest.TestCase):
                                  {'type': 'rule_predefined_names'}]}
 
     def test_command_not_found(self):
-        with self.assertRaises(exceptions.NoImportFound):
-            importer.apply_rules(module_config=self.config,
-                                 module=apply_rules_module,
-                                 variable='x')
+        result = importer.apply_rules(module_config=self.config,
+                                      module=apply_rules_module,
+                                      variable='x')
+        self.assertEqual(result, None)
 
     def test_command_found(self):
         command = importer.apply_rules(module_config=self.config,
@@ -70,12 +71,12 @@ class TestGetModuleScopesTree(unittest.TestCase):
 
         scope = importer.get_module_scopes_tree(test_path)
 
-        self.assertEqual(scope.variables, {'x': constants.VARIABLE_STATE.INITIALIZED,
-                                           'y': constants.VARIABLE_STATE.INITIALIZED})
+        self.assertEqual(scope.variables, {'x': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 3),
+                                           'y': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 5)})
 
         self.assertEqual(scope.children[0].variables,
-                         {'q': constants.VARIABLE_STATE.INITIALIZED,
-                          'z': constants.VARIABLE_STATE.UNINITIALIZED})
+                         {'q': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 5),
+                          'z': scopes_tree.VariableInfo(constants.VARIABLE_STATE.UNINITIALIZED, 6)})
 
 
 class TestProcessModule(unittest.TestCase):
@@ -101,6 +102,13 @@ class TestProcessModule(unittest.TestCase):
         self.assertTrue(hasattr(module, 'process_module_circular_4'))
 
         self.assertEqual(module.y, 111)
+
+    def test_no_import_found(self):
+        module = importlib.import_module('smart_imports.tests.fake_package.process_module_no_imports')
+
+        with self.assertRaises(exceptions.NoImportFound):
+            importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                    module=module)
 
 
 class TestAll(unittest.TestCase):

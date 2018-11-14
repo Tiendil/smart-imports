@@ -4,8 +4,27 @@ import collections
 from . import constants as c
 
 
+class VariableInfo:
+    __slots__ = ('state', 'line')
+
+    def __init__(self, state, line):
+        self.state = state
+        self.line = line
+
+    def __eq__(self, other):
+        return (self.__class__ == other.__class__ and
+                self.state == other.state and
+                self.line == other.line)
+
+    def __ne__(self, other):
+        return not self.__ne__(other)
+
+    def __repr__(self):
+        return 'VariableInfo({}, {})'.format(repr(self.state), self.line)
+
+
 class Scope:
-    __slots__ = ('variables', 'type', 'children', 'parent')
+    __slots__ = ('variables', 'variables_lines', 'type', 'children', 'parent')
 
     def __init__(self, type):
         self.type = type
@@ -13,11 +32,11 @@ class Scope:
         self.children = []
         self.parent = None
 
-    def register_variable(self, variable, state):
+    def register_variable(self, variable, state, line):
         if variable in self.variables:
             return
 
-        self.variables[variable] = state
+        self.variables[variable] = VariableInfo(state, line)
 
     def add_child(self, child):
         self.children.append(child)
@@ -71,14 +90,16 @@ def is_variable_defined(variable, scope):
     if variable not in scope.variables:
         return False
 
-    if scope.variables[variable] == c.VARIABLE_STATE.INITIALIZED:
+    if scope.variables[variable].state == c.VARIABLE_STATE.INITIALIZED:
         return True
 
     for scope in reversed_branch(scope):
         if scope.type == c.SCOPE_TYPE.CLASS:
             continue
 
-        if scope.variables.get(variable) == c.VARIABLE_STATE.INITIALIZED:
+        variable_info = scope.variables.get(variable)
+
+        if variable_info and variable_info.state == c.VARIABLE_STATE.INITIALIZED:
             return True
 
     return False
@@ -101,6 +122,24 @@ def determine_variable_usage(variable, scopes, usage_checker):
     return c.VARIABLE_USAGE_TYPE.PARTIALY_DEFINED
 
 
+def search_undefined_variable_lines(variable, scopes, usage_checker=is_variable_defined):
+
+    if not scopes:
+        return []
+
+    lines = []
+
+    for scope in scopes:
+        if usage_checker(variable, scope):
+            continue
+
+        lines.append(scope.variables[variable].line)
+
+    lines.sort()
+
+    return lines
+
+
 def search_candidates_to_import(root_scope):
     variables_scopes = get_variables_scopes(root_scope)
 
@@ -121,4 +160,4 @@ def search_candidates_to_import(root_scope):
 
         partialy_undefined_variables.add(variable)
 
-    return fully_undefined_variables, partialy_undefined_variables
+    return fully_undefined_variables, partialy_undefined_variables, variables_scopes

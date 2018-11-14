@@ -25,7 +25,7 @@ class TestAnalyzer(unittest.TestCase):
 
         variables = scopes_tree.search_candidates_to_import(analyzer.scope)
 
-        fully_undefined_variables, partialy_undefined_variables = variables
+        fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
         self.assertEqual(fully_undefined_variables,
                          {'var_3',
@@ -50,9 +50,19 @@ class TestAnalyzer(unittest.TestCase):
                           'super',
                           'abs',
                           'range',
-                          'zip'})
+                          'zip',
+                          'print'})
 
         self.assertEqual(partialy_undefined_variables,
                          {'var_9',
                           'var_13',
                           'var_46'})
+
+        self.assertEqual(variables_scopes['zip'][0].variables['zip'].line, 31)
+        self.assertEqual(variables_scopes['var_33'][0].variables['var_33'].line, 49)
+
+        self.assertEqual({scope.variables['var_46'].line for scope in variables_scopes['var_46']},
+                         {65, 67})  # skip line 66 since it is the same scope with line 67 and loop assigment has priority
+
+        self.assertEqual({scope.variables['var_56'].line for scope in variables_scopes['var_56']},
+                         {78, 81})

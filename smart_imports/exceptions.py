@@ -25,7 +25,10 @@ class ImporterError(SmartImportsError):
 
 
 class NoImportFound(ImporterError):
-    MESSAGE = 'can not find import rule for variable "{variable}" in module "{module}", file: {path}'
+    MESSAGE = 'can not find import rule for variable "{variable}"\n\n' \
+              'module: "{module}"\n' \
+              'file: {path}\n' \
+              'lines: {lines}'
 
 
 class RulesError(ImporterError):

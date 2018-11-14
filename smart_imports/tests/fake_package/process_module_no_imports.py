@@ -1,0 +1,4 @@
+
+
+def y():
+    print(x)

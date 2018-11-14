@@ -18,17 +18,17 @@ class TestScope(unittest.TestCase):
     def test_register_variable(self):
         scope = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
 
-        scope.register_variable('variable_name', 'state')
+        scope.register_variable('variable_name', 'state', line=7)
 
-        self.assertEqual(scope.variables, {'variable_name': 'state'})
+        self.assertEqual(scope.variables, {'variable_name': scopes_tree.VariableInfo('state', 7)})
 
     def test_register_variable__duplicate_registration(self):
         scope = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
 
-        scope.register_variable('variable_name', 'state.1')
-        scope.register_variable('variable_name', 'state.2')
+        scope.register_variable('variable_name', 'state.1', 7)
+        scope.register_variable('variable_name', 'state.2', 8)
 
-        self.assertEqual(scope.variables, {'variable_name': 'state.1'})
+        self.assertEqual(scope.variables, {'variable_name': scopes_tree.VariableInfo('state.1', 7)})
 
     def test_add_child(self):
         scope_1 = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
@@ -176,22 +176,22 @@ class TestIsVariableDefined(unittest.TestCase):
 
     def test_variable_initialized(self):
         scope = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope.variables['var_1'] = c.VARIABLE_STATE.INITIALIZED
+        scope.register_variable('var_1', c.VARIABLE_STATE.INITIALIZED, 7)
         self.assertTrue(scopes_tree.is_variable_defined('var_1', scope))
 
     def test_branch_processing(self):
         scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_root.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_root.variables['var_2'] = c.VARIABLE_STATE.INITIALIZED
+        scope_root.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 7)
+        scope_root.register_variable('var_2', c.VARIABLE_STATE.INITIALIZED, 8)
 
         scope_median = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_median.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_median.variables['var_3'] = c.VARIABLE_STATE.INITIALIZED
+        scope_median.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 9)
+        scope_median.register_variable('var_3', c.VARIABLE_STATE.INITIALIZED, 10)
 
         scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_leaf.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 11)
+        scope_leaf.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 12)
+        scope_leaf.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 13)
 
         scope_root.add_child(scope_median)
         scope_median.add_child(scope_leaf)
@@ -202,17 +202,17 @@ class TestIsVariableDefined(unittest.TestCase):
 
     def test_ignore_middle_class_scope(self):
         scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_root.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_root.variables['var_2'] = c.VARIABLE_STATE.INITIALIZED
+        scope_root.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 1)
+        scope_root.register_variable('var_2', c.VARIABLE_STATE.INITIALIZED, 2)
 
         scope_median = scopes_tree.Scope(type=c.SCOPE_TYPE.CLASS)
-        scope_median.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_median.variables['var_3'] = c.VARIABLE_STATE.INITIALIZED
+        scope_median.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 3)
+        scope_median.register_variable('var_3', c.VARIABLE_STATE.INITIALIZED, 4)
 
         scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_leaf.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 5)
+        scope_leaf.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 6)
+        scope_leaf.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 7)
 
         scope_root.add_child(scope_median)
         scope_median.add_child(scope_leaf)
@@ -223,17 +223,17 @@ class TestIsVariableDefined(unittest.TestCase):
 
     def test_not_ignore_original_class_scope(self):
         scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_root.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_root.variables['var_2'] = c.VARIABLE_STATE.INITIALIZED
+        scope_root.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 1)
+        scope_root.register_variable('var_2', c.VARIABLE_STATE.INITIALIZED, 2)
 
         scope_median = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_median.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_median.variables['var_3'] = c.VARIABLE_STATE.INITIALIZED
+        scope_median.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 3)
+        scope_median.register_variable('var_3', c.VARIABLE_STATE.INITIALIZED, 4)
 
         scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.CLASS)
-        scope_leaf.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 5)
+        scope_leaf.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 6)
+        scope_leaf.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 7)
 
         scope_root.add_child(scope_median)
         scope_median.add_child(scope_leaf)
@@ -271,31 +271,70 @@ class TestDetermineVariableUsage(unittest.TestCase):
         self.check([False, False], c.VARIABLE_USAGE_TYPE.FULLY_UNDEFINED)
 
 
+class TestSearchUndefinedVariableLines(unittest.TestCase):
+
+    def test(self):
+        scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
+        scope_root.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 1)
+        scope_root.register_variable('var_2', c.VARIABLE_STATE.INITIALIZED, 2)
+
+        scope_median = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
+        scope_median.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 3)
+
+        scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.CLASS)
+        scope_leaf.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 4)
+        scope_leaf.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 5)
+        scope_leaf.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 6)
+
+        scope_root.add_child(scope_median)
+        scope_median.add_child(scope_leaf)
+
+        self.assertEqual(scopes_tree.search_undefined_variable_lines('var_1',
+                                                                     [scope_root, scope_leaf],
+                                                                     scopes_tree.is_variable_defined),
+                         [1, 4])
+
+        self.assertEqual(scopes_tree.search_undefined_variable_lines('var_2',
+                                                                     [scope_root, scope_median, scope_leaf],
+                                                                     scopes_tree.is_variable_defined),
+                         [])
+
+        self.assertEqual(scopes_tree.search_undefined_variable_lines('var_3',
+                                                                     [scope_leaf],
+                                                                     scopes_tree.is_variable_defined),
+                         [6])
+
+
 class TestSearchCandidatesToImport(unittest.TestCase):
 
     def test(self):
         scope_root = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_root.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_root.variables['var_2'] = c.VARIABLE_STATE.INITIALIZED
+        scope_root.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 1)
+        scope_root.register_variable('var_2', c.VARIABLE_STATE.INITIALIZED, 2)
 
         scope_median_1 = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_median_1.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_median_1.variables['var_3'] = c.VARIABLE_STATE.INITIALIZED
+        scope_median_1.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 3)
+        scope_median_1.register_variable('var_3', c.VARIABLE_STATE.INITIALIZED, 4)
 
         scope_leaf = scopes_tree.Scope(type=c.SCOPE_TYPE.CLASS)
-        scope_leaf.variables['var_1'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_leaf.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_leaf.register_variable('var_1', c.VARIABLE_STATE.UNINITIALIZED, 5)
+        scope_leaf.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 6)
+        scope_leaf.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 7)
 
         scope_median_2 = scopes_tree.Scope(type=c.SCOPE_TYPE.NORMAL)
-        scope_median_2.variables['var_2'] = c.VARIABLE_STATE.UNINITIALIZED
-        scope_median_2.variables['var_3'] = c.VARIABLE_STATE.UNINITIALIZED
+        scope_median_2.register_variable('var_2', c.VARIABLE_STATE.UNINITIALIZED, 8)
+        scope_median_2.register_variable('var_3', c.VARIABLE_STATE.UNINITIALIZED, 9)
 
         scope_root.add_child(scope_median_1)
         scope_root.add_child(scope_median_2)
         scope_median_1.add_child(scope_leaf)
 
-        fully_undefined_variables, partialy_undefined_variables = scopes_tree.search_candidates_to_import(scope_root)
+        variables = scopes_tree.search_candidates_to_import(scope_root)
+
+        fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
         self.assertEqual(fully_undefined_variables, {'var_1'})
         self.assertEqual(partialy_undefined_variables, {'var_3'})
+        self.assertEqual(variables_scopes, {'var_1': [scope_root, scope_leaf],
+                                            'var_2': [scope_root, scope_median_1, scope_median_2, scope_leaf],
+                                            'var_3': [scope_median_1, scope_median_2, scope_leaf]})
