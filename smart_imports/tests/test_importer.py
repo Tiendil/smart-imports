@@ -67,16 +67,20 @@ class TestApplyRules(unittest.TestCase):
 class TestGetModuleScopesTree(unittest.TestCase):
 
     def test(self):
-        test_path = os.path.join(TEST_FIXTURES_DIR, 'get_module_scopes_tree.py')
+        source = '''
+x = 1
 
-        scope = importer.get_module_scopes_tree(test_path)
+def y(q):
+    return q + z
+        '''
+        scope = importer.get_module_scopes_tree(source)
 
-        self.assertEqual(scope.variables, {'x': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 3),
-                                           'y': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 5)})
+        self.assertEqual(scope.variables, {'x': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 2),
+                                           'y': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 4)})
 
         self.assertEqual(scope.children[0].variables,
-                         {'q': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 5),
-                          'z': scopes_tree.VariableInfo(constants.VARIABLE_STATE.UNINITIALIZED, 6)})
+                         {'q': scopes_tree.VariableInfo(constants.VARIABLE_STATE.INITIALIZED, 4),
+                          'z': scopes_tree.VariableInfo(constants.VARIABLE_STATE.UNINITIALIZED, 5)})
 
 
 class TestProcessModule(unittest.TestCase):

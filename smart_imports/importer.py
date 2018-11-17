@@ -21,11 +21,8 @@ def apply_rules(module_config, module, variable):
     return None
 
 
-def get_module_scopes_tree(module_path):
-    with open(module_path, encoding='utf-8') as f:
-        code = f.read()
-
-    tree = ast.parse(code)
+def get_module_scopes_tree(source):
+    tree = ast.parse(source)
 
     analyzer = ast_parser.Analyzer()
 
@@ -39,7 +36,7 @@ def variables_processor(variables):
 
 
 def process_module(module_config, module, variables_processor=variables_processor):
-    root_scope = get_module_scopes_tree(module.__file__)
+    root_scope = get_module_scopes_tree(module.__loader__.get_source(module.__name__))
 
     variables = scopes_tree.search_candidates_to_import(root_scope)
 
