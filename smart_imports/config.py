@@ -1,6 +1,7 @@
 
 import os
 import json
+import uuid
 
 from . import constants
 from . import exceptions
@@ -9,7 +10,9 @@ from . import exceptions
 CONFIGS_CACHE = {}
 
 
-DEFAULT_CONFIG = {'rules': [{'type': 'rule_local_modules'},
+DEFAULT_CONFIG = {'uid': 'smart_imports_default_config',
+                  'path': None,
+                  'rules': [{'type': 'rule_local_modules'},
                             {'type': 'rule_stdlib'},
                             {'type': 'rule_predefined_names'}]}
 
@@ -43,6 +46,12 @@ def get(path, config_name=constants.CONFIG_FILE_NAME):
 
     for path in checked_paths:
         CONFIGS_CACHE[path] = config
+
+    if 'uid' not in config:
+        config['uid'] = uuid.uuid4().hex
+
+    if 'path' not in config:
+        config['path'] = config_path
 
     return config
 

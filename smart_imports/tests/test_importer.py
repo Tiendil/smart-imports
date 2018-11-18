@@ -1,5 +1,6 @@
 
 import os
+import uuid
 import math
 import json
 import unittest
@@ -26,7 +27,9 @@ class TestApplyRules(unittest.TestCase):
     def setUp(self):
         self.source_module = 'smart_imports.tests.fake_package.config_variables'
 
-        self.config = {'rules': [{'type': 'rule_custom',
+        self.config = {'uid': uuid.uuid4().hex,
+                       '_path': 'some path',
+                       'rules': [{'type': 'rule_custom',
                                   'variables': {'config_variable': {'module': self.source_module}}},
                                  {'type': 'rule_local_modules'},
                                  {'type': 'rule_stdlib'},
@@ -49,7 +52,9 @@ class TestApplyRules(unittest.TestCase):
                                                       source_attribute=None))
 
     def test_rules_priority(self):
-        config = {'rules': [{'type': 'rule_custom',
+        config = {'uid': uuid.uuid4().hex,
+                  '_path': 'some path',
+                  'rules': [{'type': 'rule_custom',
                              'variables': {'var_1': {'module': 'math'}}},
                             {'type': 'rule_custom',
                              'variables': {'var_1': {'module': 'json'}}}]}

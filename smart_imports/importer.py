@@ -11,9 +11,9 @@ from . import discovering
 
 def apply_rules(module_config, module, variable):
 
-    for rule_config in module_config['rules']:
+    for rule in rules.get_for_config(module_config):
 
-        command = rules.apply(rule_config, module, variable)
+        command = rule.apply(module, variable)
 
         if command:
             return command

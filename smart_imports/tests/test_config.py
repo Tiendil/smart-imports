@@ -21,7 +21,9 @@ class TestGet(unittest.TestCase):
         super().tearDown()
         config.CONFIGS_CACHE.clear()
 
-    def prepair_data(self, temp_directory):
+    def prepair_data(self, temp_directory,
+                     parent_config=config.DEFAULT_CONFIG,
+                     child_config=config.DEFAULT_CONFIG):
         path = os.path.join(temp_directory,
                             'dir_with_not_reached_config',
                             'dir_with_config',
@@ -32,7 +34,7 @@ class TestGet(unittest.TestCase):
         with open(os.path.join(temp_directory,
                                'dir_with_not_reached_config',
                                constants.CONFIG_FILE_NAME), 'w') as f:
-            data = copy.deepcopy(config.DEFAULT_CONFIG)
+            data = copy.deepcopy(parent_config)
             data['test'] = 1
             f.write(json.dumps(data))
 
@@ -40,7 +42,7 @@ class TestGet(unittest.TestCase):
                                'dir_with_not_reached_config',
                                'dir_with_config',
                                constants.CONFIG_FILE_NAME), 'w') as f:
-            data = copy.deepcopy(config.DEFAULT_CONFIG)
+            data = copy.deepcopy(child_config)
             data['test'] = 2
             f.write(json.dumps(data))
 
@@ -67,7 +69,17 @@ class TestGet(unittest.TestCase):
                           os.path.dirname(leaf_path): data,
                           os.path.dirname(os.path.dirname(leaf_path)): data})
 
-    maxDiff = None
+    def test_get__fill_missed_arguments(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            leaf_path = self.prepair_data(temp_directory, child_config={'rules': []})
+
+            loaded_config = config.get(leaf_path)
+
+            self.assertIn('uid', loaded_config)
+            self.assertIn('path', loaded_config)
+
+            self.assertTrue(os.path.isfile(loaded_config['path']))
+
     def test_two_configs(self):
         with tempfile.TemporaryDirectory() as temp_directory:
             leaf_path_1 = self.prepair_data(temp_directory)
