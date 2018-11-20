@@ -30,7 +30,8 @@ class TestAnalyzer(unittest.TestCase):
         fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
         self.assertEqual(fully_undefined_variables,
-                         {'annotation_1',
+                         {'перменная_2',
+                          'annotation_1',
                           'annotation_2',
                           'var_3',
                           'var_7',
@@ -89,7 +90,8 @@ class TestAnalyzer(unittest.TestCase):
         fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
         self.assertEqual(fully_undefined_variables,
-                         {'annotation_1',
+                         {'перменная_2',
+                          'annotation_1',
                           'annotation_2',
                           'var_3',
                           'var_7',
@@ -160,7 +162,8 @@ class TestAnalyzer(unittest.TestCase):
         fully_undefined_variables, partialy_undefined_variables, variables_scopes = variables
 
         self.assertEqual(fully_undefined_variables,
-                         {'annotation_1',
+                         {'перменная_2',
+                          'annotation_1',
                           'annotation_2',
                           'var_3',
                           'var_7',

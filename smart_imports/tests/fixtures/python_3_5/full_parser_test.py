@@ -86,3 +86,8 @@ async def function_3():
     await var_57
 
     return function_4
+
+
+# unicode
+
+переменная_1 = перменная_2 + var_1

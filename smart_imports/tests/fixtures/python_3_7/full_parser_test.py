@@ -116,3 +116,8 @@ async def fuction_4():
     var_66 = [(var_73 + var_74+var_81) async for var_73, var_74 in var_75() if (var_76 + var_74) % 2]
 
     var_66 = [await var_77() for var_77, var_78 in var_79 if await var_80(var_78)]
+
+
+# unicode
+
+переменная_1 = перменная_2 + var_1
