@@ -4,7 +4,7 @@
 Smart import for Python
 #######################
 
-|pypi| |python_versions| |test_coverege_master|
+|pypi| |python_versions| |test_coverege_develop|
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/smart_imports.svg?style=flat-square&label=latest%20stable%20version&reset_github_caches=1
@@ -14,7 +14,6 @@ Smart import for Python
 .. |python_versions| image:: https://img.shields.io/pypi/pyversions/smart_imports.svg?style=flat-square&reset_github_caches=1
     :target: https://pypi.python.org/pypi/smart_imports
     :alt: Supported Python versions
-
 
 .. |test_coverege_develop| image:: https://coveralls.io/repos/github/Tiendil/smart-imports/badge.svg?branch=develop&reset_github_caches=1
     :target: https://coveralls.io/github/Tiendil/smart-imports?branch=develop
