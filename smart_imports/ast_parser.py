@@ -88,6 +88,9 @@ class Analyzer(ast.NodeVisitor):
 
         self.visit_default_arguments(node.args)
 
+        if node.returns is not None:
+            self.visit(node.returns)
+
         self.push_scope(type=c.SCOPE_TYPE.NORMAL)
 
         self.visit_arguments(node.args)
@@ -124,18 +127,24 @@ class Analyzer(ast.NodeVisitor):
 
             self.visit(default)
 
+    def process_arg(self, arg):
+        self.register_variable_set(arg.arg, arg.lineno)
+
+        if arg.annotation is not None:
+            self.visit(arg.annotation)
+
     def visit_arguments(self, node):
         for arg in node.args:
-            self.register_variable_set(arg.arg, arg.lineno)
+            self.process_arg(arg)
 
         for arg in node.kwonlyargs:
-            self.register_variable_set(arg.arg, arg.lineno)
+            self.process_arg(arg)
 
         if node.vararg:
-            self.register_variable_set(node.vararg.arg, node.vararg.lineno)
+            self.process_arg(node.vararg)
 
         if node.kwarg:
-            self.register_variable_set(node.kwarg.arg, node.kwarg.lineno)
+            self.process_arg(node.kwarg)
 
     def visit_ClassDef(self, node):
         self.register_variable_set(node.name, node.lineno)
