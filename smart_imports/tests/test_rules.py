@@ -5,7 +5,10 @@ import uuid
 import unittest
 import importlib
 
+from unittest import mock
+
 from .. import rules
+from .. import config
 from .. import helpers
 from .. import exceptions
 
@@ -14,8 +17,8 @@ class TestCustomRule(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self. config = {'variables': {'y': {'module': 'z'},
-                                      'p': {'module': 'q', 'attribute': 'w'}}}
+        self.config = {'variables': {'y': {'module': 'z'},
+                                     'p': {'module': 'q', 'attribute': 'w'}}}
         self.rule = rules.CustomRule(config=self.config)
 
     def test_no_variables(self):
@@ -66,6 +69,22 @@ class TestLocalModulesRule(unittest.TestCase):
         with open(os.path.join(base_directory, 'a', 'b', 'y.py'), 'w') as f:
             f.write(' ')
 
+    def test_wrong_package(self):
+        module = type(os)('some_module')
+
+        self.assertEqual(module.__package__, None)
+
+        command = self.rule.apply(module=module,
+                                  variable='y')
+
+        self.assertEqual(command, None)
+
+        command = self.rule.apply(module=mock.Mock(),
+                                  variable='y')
+
+        self.assertEqual(command, None)
+
+
     def test_module_found(self):
         with helpers.test_directory() as temp_directory:
             self.prepair_modules(temp_directory)
@@ -90,6 +109,44 @@ class TestLocalModulesRule(unittest.TestCase):
                                       variable='x')
 
             self.assertEqual(command, None)
+
+
+class TestGlobalModulesRule(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.rule = rules.GlobalModulesRule(config={})
+
+    def test_no_global_module(self):
+        module_name = 'global_module_{}'.format(uuid.uuid4().hex)
+
+        with helpers.test_directory() as temp_directory:
+            with open(os.path.join(temp_directory, '{}.py'.format(module_name)), 'w') as f:
+                f.write(' ')
+
+            module = type(os)('some_module')
+
+            command = self.rule.apply(module=module,
+                                      variable='y')
+
+            self.assertEqual(command, None)
+
+    def test_has_global_module(self):
+        module_name = 'global_module_{}'.format(uuid.uuid4().hex)
+
+        with helpers.test_directory() as temp_directory:
+            with open(os.path.join(temp_directory, '{}.py'.format(module_name)), 'w') as f:
+                f.write(' ')
+
+            module = type(os)('some_module')
+
+            command = self.rule.apply(module=module,
+                                      variable=module_name)
+
+            self.assertEqual(command, rules.ImportCommand(target_module=module,
+                                                          target_attribute=module_name,
+                                                          source_module=module_name,
+                                                          source_attribute=None))
 
 
 class TestStdLibRule(unittest.TestCase):
@@ -329,6 +386,7 @@ class TestDefaultRules(unittest.TestCase):
                                                       'rule_prefix',
                                                       'rule_local_modules_from_namespace',
                                                       'rule_local_modules',
+                                                      'rule_global_modules',
                                                       'rule_custom'})
 
 
@@ -367,16 +425,15 @@ class TestGetForConfig(unittest.TestCase):
 
     def test_no_rule(self):
         with self.assertRaises(exceptions.RuleNotRegistered):
-            rules.get_for_config({'uid': uuid.uuid4().hex,
-                                  'rules': [{'type': 'xxx'}]})
+            test_config = config.DEFAULT_CONFIG.clone(rules=[{'type': 'xxx'}])
+            rules.get_for_config(test_config)
 
     def test_success(self):
-        config = {'uid': uuid.uuid4().hex,
-                  'rules': [{"type": "rule_local_modules"},
-                            {"type": "rule_stdlib"}]}
+        test_config = config.DEFAULT_CONFIG.clone(rules=[{"type": "rule_local_modules"},
+                                                         {"type": "rule_stdlib"}])
 
-        found_rules_1 = rules.get_for_config(config)
-        found_rules_2 = rules.get_for_config(config)
+        found_rules_1 = rules.get_for_config(test_config)
+        found_rules_2 = rules.get_for_config(test_config)
 
         for rule_1, rule_2 in zip(found_rules_1, found_rules_2):
             self.assertIs(rule_1, rule_2)

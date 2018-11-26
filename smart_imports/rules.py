@@ -26,12 +26,12 @@ def remove(name):
 
 
 def get_for_config(config):
-    uid = config['uid']
+    uid = config.uid
 
     if uid not in _RULES:
         rules = []
 
-        for rule_config in config['rules']:
+        for rule_config in config.rules:
             fabric_type = rule_config['type']
 
             if fabric_type not in _FABRICS:
@@ -40,7 +40,7 @@ def get_for_config(config):
             rule = _FABRICS[fabric_type](config=rule_config)
 
             if not rule.verify_config():
-                raise exceptions.ConfigHasWrongFormat(path=config['path'],
+                raise exceptions.ConfigHasWrongFormat(path=config.path,
                                                       message='wrong format of rule {}'.format(fabric_type))
 
             rules.append(rule)
@@ -139,7 +139,10 @@ class LocalModulesRule(_BaseRule):
 
     def apply(self, module, variable):
 
-        package_name = module.__package__
+        package_name = getattr(module, '__package__', None)
+
+        if not package_name:
+            return None
 
         if package_name not in self._LOCAL_MODULES_CACHE:
             parent = sys.modules[package_name]
@@ -157,6 +160,25 @@ class LocalModulesRule(_BaseRule):
         return ImportCommand(target_module=module,
                              target_attribute=variable,
                              source_module='{}.{}'.format(package_name, variable),
+                             source_attribute=None)
+
+
+class GlobalModulesRule(_BaseRule):
+    __slots__ = ()
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        loader = pkgutil.find_loader(variable)
+
+        if loader is None:
+            return None
+
+        return ImportCommand(target_module=module,
+                             target_attribute=variable,
+                             source_module=variable,
                              source_attribute=None)
 
 
@@ -311,6 +333,7 @@ class LocalModulesFromNamespaceRule(_BaseRule):
 
 register('rule_predefined_names', PredefinedNamesRule)
 register('rule_local_modules', LocalModulesRule)
+register('rule_global_modules', GlobalModulesRule)
 register('rule_custom', CustomRule)
 register('rule_stdlib', StdLibRule)
 register('rule_prefix', PrefixRule)

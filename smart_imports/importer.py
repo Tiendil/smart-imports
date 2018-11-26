@@ -1,6 +1,7 @@
 
 import ast
 
+from . import cache
 from . import rules
 from . import config
 from . import ast_parser
@@ -12,7 +13,6 @@ from . import discovering
 def apply_rules(module_config, module, variable):
 
     for rule in rules.get_for_config(module_config):
-
         command = rule.apply(module, variable)
 
         if command:
@@ -35,8 +35,9 @@ def variables_processor(variables):
     return variables
 
 
-def process_module(module_config, module, variables_processor=variables_processor):
-    root_scope = get_module_scopes_tree(module.__loader__.get_source(module.__name__))
+def extract_variables(source):
+
+    root_scope = get_module_scopes_tree(source)
 
     variables = scopes_tree.search_candidates_to_import(root_scope)
 
@@ -44,6 +45,24 @@ def process_module(module_config, module, variables_processor=variables_processo
 
     variables = list(fully_undefined_variables)
     variables.extend(partialy_undefined_variables)
+
+    return variables, variables_scopes
+
+
+def process_module(module_config, module, variables_processor=variables_processor):
+
+    source = module.__loader__.get_source(module.__name__)
+
+    parser_cache = cache.Cache(cache_dir=module_config.cache_dir,
+                               module_name=module.__name__,
+                               source=source)
+
+    variables = parser_cache.get()
+
+    if variables is None:
+        variables, variables_scopes = extract_variables(source=source)
+
+        parser_cache.set(variables)
 
     # sort variables to fixate import order
     variables.sort()

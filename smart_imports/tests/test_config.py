@@ -2,7 +2,7 @@
 import os
 import json
 import uuid
-import copy
+import pathlib
 import tempfile
 import unittest
 
@@ -31,20 +31,22 @@ class TestGet(unittest.TestCase):
                             'leaf_dir')
         os.makedirs(path)
 
-        with open(os.path.join(temp_directory,
-                               'dir_with_not_reached_config',
-                               constants.CONFIG_FILE_NAME), 'w') as f:
-            data = copy.deepcopy(parent_config)
-            data['test'] = 1
-            f.write(json.dumps(data))
+        path_1 = os.path.join(temp_directory,
+                              'dir_with_not_reached_config',
+                              constants.CONFIG_FILE_NAME)
 
-        with open(os.path.join(temp_directory,
-                               'dir_with_not_reached_config',
-                               'dir_with_config',
-                               constants.CONFIG_FILE_NAME), 'w') as f:
-            data = copy.deepcopy(child_config)
-            data['test'] = 2
-            f.write(json.dumps(data))
+        with open(path_1, 'w') as f:
+            data = parent_config.clone(path=path_1)
+            f.write(json.dumps(data.serialize()))
+
+        path_2 = os.path.join(temp_directory,
+                              'dir_with_not_reached_config',
+                              'dir_with_config',
+                              constants.CONFIG_FILE_NAME)
+
+        with open(path_2, 'w') as f:
+            data = child_config.clone(path='#config.2')
+            f.write(json.dumps(data.serialize()))
 
         return path
 
@@ -54,31 +56,35 @@ class TestGet(unittest.TestCase):
 
             loaded_config = config.get(leaf_path)
 
-            data = copy.deepcopy(config.DEFAULT_CONFIG)
-            data['test'] = 2
+            config_path = os.path.join(os.path.dirname(os.path.dirname(leaf_path)), constants.CONFIG_FILE_NAME)
 
-            self.assertEqual(data, loaded_config)
+            expected_config = config.DEFAULT_CONFIG.clone(path=config_path)
+
+            self.assertEqual(expected_config, loaded_config)
 
         # test cache here, file already removed, but cached data still exists
         loaded_config = config.get(leaf_path)
 
-        self.assertEqual(data, loaded_config)
+        self.assertEqual(expected_config, loaded_config)
 
         self.assertEqual(config.CONFIGS_CACHE,
-                         {leaf_path: data,
-                          os.path.dirname(leaf_path): data,
-                          os.path.dirname(os.path.dirname(leaf_path)): data})
+                         {leaf_path: expected_config,
+                          os.path.dirname(leaf_path): expected_config,
+                          os.path.dirname(os.path.dirname(leaf_path)): expected_config})
 
     def test_get__fill_missed_arguments(self):
         with tempfile.TemporaryDirectory() as temp_directory:
-            leaf_path = self.prepair_data(temp_directory, child_config={'rules': []})
+
+            child_config = config.DEFAULT_CONFIG.clone(rules=[])
+
+            leaf_path = self.prepair_data(temp_directory, child_config=child_config)
 
             loaded_config = config.get(leaf_path)
 
-            self.assertIn('uid', loaded_config)
-            self.assertIn('path', loaded_config)
+            self.assertEqual(loaded_config.uid, loaded_config.path)
+            self.assertEqual(loaded_config.path, loaded_config.path)
 
-            self.assertTrue(os.path.isfile(loaded_config['path']))
+            self.assertTrue(os.path.isfile(loaded_config.path))
 
     def test_two_configs(self):
         with tempfile.TemporaryDirectory() as temp_directory:
@@ -87,25 +93,30 @@ class TestGet(unittest.TestCase):
             leaf_path_2 = leaf_path_1 + '2'
             os.makedirs(leaf_path_2)
 
-            with open(os.path.join(leaf_path_2, constants.CONFIG_FILE_NAME), 'w') as f:
-                data_2 = copy.deepcopy(config.DEFAULT_CONFIG)
-                data_2['test'] = 3
-                f.write(json.dumps(data_2))
+            config_2_path = os.path.join(leaf_path_2, constants.CONFIG_FILE_NAME)
+
+            with open(config_2_path, 'w') as f:
+                expected_config_2 = config.DEFAULT_CONFIG.clone(path=config_2_path)
+                f.write(json.dumps(expected_config_2.serialize()))
 
             loaded_config_1 = config.get(leaf_path_1)
             loaded_config_2 = config.get(leaf_path_2)
 
-            data_1 = copy.deepcopy(config.DEFAULT_CONFIG)
-            data_1['test'] = 2
+            config_1_path = os.path.join(os.path.dirname(os.path.dirname(leaf_path_1)), constants.CONFIG_FILE_NAME)
 
-            self.assertEqual(data_1, loaded_config_1)
-            self.assertEqual(data_2, loaded_config_2)
+            expected_config_1 = config.DEFAULT_CONFIG.clone(path=config_1_path)
+
+            expected_config_1.path = config_1_path
+            expected_config_2.path = config_2_path
+
+            self.assertEqual(expected_config_1, loaded_config_1)
+            self.assertEqual(expected_config_2, loaded_config_2)
 
         self.assertEqual(config.CONFIGS_CACHE,
-                         {leaf_path_2: data_2,
-                          leaf_path_1: data_1,
-                          os.path.dirname(leaf_path_1): data_1,
-                          os.path.dirname(os.path.dirname(leaf_path_1)): data_1})
+                         {leaf_path_2: expected_config_2,
+                          leaf_path_1: expected_config_1,
+                          os.path.dirname(leaf_path_1): expected_config_1,
+                          os.path.dirname(os.path.dirname(leaf_path_1)): expected_config_1})
 
     def test_not_found_find(self):
         with tempfile.TemporaryDirectory() as temp_directory:
@@ -113,7 +124,7 @@ class TestGet(unittest.TestCase):
 
             loaded_config = config.get(leaf_path, config_name='not_found.json')
 
-            self.assertEqual(loaded_config, config.DEFAULT_CONFIG)
+            self.assertEqual(loaded_config, config.DEFAULT_CONFIG.clone(path=loaded_config.path))
 
 
 class TestLoad(unittest.TestCase):
@@ -132,10 +143,10 @@ class TestLoad(unittest.TestCase):
 
     def test_success(self):
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(json.dumps(config.DEFAULT_CONFIG).encode('utf-8'))
+            f.write(json.dumps(config.DEFAULT_CONFIG.serialize()).encode('utf-8'))
             f.close()
 
-            self.assertEqual(config.load(f.name), config.DEFAULT_CONFIG)
+            self.assertEqual(config.load(f.name), config.DEFAULT_CONFIG.clone(path=f.name))
 
     def test_check_on_load(self):
         with self.assertRaises(exceptions.ConfigError):
@@ -156,11 +167,37 @@ class TestCheck(unittest.TestCase):
             config.load(f.name)
 
     def test_no_rules(self):
-        data = copy.deepcopy(config.DEFAULT_CONFIG)
+        data = config.DEFAULT_CONFIG.serialize()
         del data['rules']
 
         with self.assertRaises(exceptions.ConfigHasWrongFormat):
             self.check_load(data)
 
     def test_success(self):
-        self.check_load(config.DEFAULT_CONFIG)
+        self.check_load(config.DEFAULT_CONFIG.serialize())
+
+
+class TestExpandCacheDirPath(unittest.TestCase):
+
+    def test_none(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            path = config.expand_cache_dir_path(config_path=f.name, cache_dir=None)
+            self.assertEqual(path, None)
+
+    def test_homedir(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            path = config.expand_cache_dir_path(config_path=f.name, cache_dir='~/1/2/3')
+            self.assertEqual(path, str(pathlib.Path.home() / '1/2/3'))
+
+    def test_absolute(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            path = config.expand_cache_dir_path(config_path=f.name, cache_dir='/1/2/3')
+            self.assertEqual(path, '/1/2/3')
+
+    def test_relative(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            path = config.expand_cache_dir_path(config_path=f.name, cache_dir='./1/2/3')
+            self.assertEqual(path, str(pathlib.Path(f.name).parent / './1/2/3'))
+
+            path = config.expand_cache_dir_path(config_path=f.name, cache_dir='1/2/3')
+            self.assertEqual(path, str(pathlib.Path(f.name).parent / '1/2/3'))

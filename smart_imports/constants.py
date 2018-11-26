@@ -20,3 +20,6 @@ class VARIABLE_USAGE_TYPE(enum.Enum):
 
 
 CONFIG_FILE_NAME = 'smart_imports.json'
+
+
+CACHE_PROTOCOL_VERSION = '1'
