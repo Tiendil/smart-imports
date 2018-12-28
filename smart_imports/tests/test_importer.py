@@ -292,6 +292,35 @@ def z():
 
             self.assertEqual(set(error.exception.arguments['lines']), {3, 6})
 
+    def test_no_import_found__cached_module(self):
+        module_name = 'process_module_no_imports_{}'.format(uuid.uuid4().hex)
+
+        source = '''
+def y():
+    print(x)
+
+def z():
+    print(x)
+'''
+        with helpers.test_directory() as temp_directory:
+            with open(os.path.join(temp_directory, module_name + '.py'), 'w') as f:
+                f.write(source)
+
+            module = importlib.import_module(module_name)
+
+            # not required to create other temp directory, since filenames do not intersect
+            test_config = config.DEFAULT_CONFIG.clone(cache_dir=temp_directory)
+
+            # test repeated calls
+            for i in range(3):
+                with self.assertRaises(exceptions.NoImportFound) as error:
+                    importer.process_module(module_config=test_config,
+                                            module=module)
+
+                self.assertEqual(set(error.exception.arguments['lines']), {3, 6})
+
+                self.assertTrue(os.path.isfile(os.path.join(temp_directory, module_name + '.cache')))
+
 
 class TestAll(unittest.TestCase):
 

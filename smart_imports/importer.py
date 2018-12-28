@@ -59,6 +59,8 @@ def process_module(module_config, module, variables_processor=variables_processo
 
     variables = parser_cache.get()
 
+    variables_scopes = None
+
     if variables is None:
         variables, variables_scopes = extract_variables(source=source)
 
@@ -76,15 +78,20 @@ def process_module(module_config, module, variables_processor=variables_processo
                               module=module,
                               variable=variable)
 
-        if command is None:
-            undefined_lines = scopes_tree.search_undefined_variable_lines(variable, variables_scopes[variable])
+        if command is not None:
+            commands.append(command)
+            continue
 
-            raise exceptions.NoImportFound(variable=variable,
-                                           module=module.__name__,
-                                           path=module.__file__,
-                                           lines=undefined_lines)
+        # process import error
+        if variables_scopes is None:
+            _, variables_scopes = extract_variables(source=source)
 
-        commands.append(command)
+        undefined_lines = scopes_tree.search_undefined_variable_lines(variable, variables_scopes[variable])
+
+        raise exceptions.NoImportFound(variable=variable,
+                                       module=module.__name__,
+                                       path=module.__file__,
+                                       lines=undefined_lines)
 
     for command in commands:
         command()
