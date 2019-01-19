@@ -88,6 +88,36 @@ async def function_3():
     return function_4
 
 
+# formatted string literals
+
+var_58 = "Fred"
+
+f"He said his name is {var_58} and {var_59}."
+
+var_60 = 10
+
+f"result: {var_58:{var_60}.{var_61}}"
+
+
+# variable annotations
+
+var_62: var_63[var_58] = var_65
+
+var_66: var_67  # Note: no initial value!
+
+
+class var_68:
+    var_69: var_70(var_66, var_72) = {}
+
+
+# asynchronous comprehensions
+
+async def fuction_4():
+    var_66 = [(var_73 + var_74+var_81) async for var_73, var_74 in var_75() if (var_76 + var_74) % 2]
+
+    var_66 = [await var_77() for var_77, var_78 in var_79 if await var_80(var_78)]
+
+
 # unicode
 
 переменная_1 = перменная_2 + var_1

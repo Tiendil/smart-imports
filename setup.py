@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='smart_imports',
-    version='0.1.1',
+    version='0.2.0',
     description='automatic importing for Python modules',
     url='https://github.com/Tiendil/smart-imports',
     author='Aleksey Yeletsky <Tiendil>',
@@ -16,14 +16,16 @@ setuptools.setup(
 
         'License :: OSI Approved :: BSD License',
 
+        'Programming language :: Python :: 3 :: only',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
 
         'Natural Language :: English',
         'Natural Language :: Russian'],
-    keywords=['python', 'impot'],
+    keywords=['python', 'import'],
     packages=setuptools.find_packages(),
     install_requires=[],
 
-    include_package_data=True,
-    test_suite = 'tests' )
+    include_package_data=True)

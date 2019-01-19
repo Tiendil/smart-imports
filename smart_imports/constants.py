@@ -5,6 +5,7 @@ import enum
 class SCOPE_TYPE(enum.Enum):
     NORMAL = 0
     CLASS = 1
+    COMPREHENSION = 2
 
 
 class VARIABLE_STATE(enum.Enum):
@@ -19,3 +20,6 @@ class VARIABLE_USAGE_TYPE(enum.Enum):
 
 
 CONFIG_FILE_NAME = 'smart_imports.json'
+
+
+CACHE_PROTOCOL_VERSION = '1'

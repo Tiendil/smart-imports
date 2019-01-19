@@ -9,28 +9,49 @@ from . import exceptions
 from . import discovering
 
 
-RULES = {}
+_FABRICS = {}
+_RULES = {}
 
 
 def register(name, rule):
-    if name in RULES:
+    if name in _FABRICS:
         raise exceptions.RuleAlreadyRegistered(rule=name)
 
-    RULES[name] = rule
+    _FABRICS[name] = rule
 
 
 def remove(name):
-    if name in RULES:
-        del RULES[name]
+    if name in _FABRICS:
+        del _FABRICS[name]
 
 
-def apply(config, module, variable):
-    name = config['type']
+def get_for_config(config):
+    uid = config.uid
 
-    if name not in RULES:
-        raise exceptions.RuleNotRegistered(rule=name)
+    if uid not in _RULES:
+        rules = []
 
-    return RULES[name](config, module, variable)
+        for rule_config in config.rules:
+            fabric_type = rule_config['type']
+
+            if fabric_type not in _FABRICS:
+                raise exceptions.RuleNotRegistered(rule=fabric_type)
+
+            rule = _FABRICS[fabric_type](config=rule_config)
+
+            if not rule.verify_config():
+                raise exceptions.ConfigHasWrongFormat(path=config.path,
+                                                      message='wrong format of rule {}'.format(fabric_type))
+
+            rules.append(rule)
+
+        _RULES[uid] = rules
+
+    return _RULES[uid]
+
+
+def reset_rules_cache():
+    _RULES.clear()
 
 
 class ImportCommand:
@@ -76,43 +97,89 @@ class NoImportCommand(ImportCommand):
         pass
 
 
-def rule_custom(config, module, variable):
+class _BaseRule:
+    __slots__ = ('config',)
 
-    if 'variables' not in config:
-        return None
+    def __init__(self, config):
+        self.config = config
 
-    if variable not in config['variables']:
-        return None
+    def verify_config(self):
+        return True
 
-    module_name = config['variables'][variable]['module']
-    attribute = config['variables'][variable].get('attribute')
-    return ImportCommand(module, variable, module_name, attribute)
-
-
-LOCAL_MODULES_CACHE = {}
+    def apply(self, module, variable):
+        raise NotImplementedError
 
 
-def rule_local_modules(config, module, variable):
+class CustomRule(_BaseRule):
+    __slots__ = ()
 
-    package_name = module.__package__
+    def verify_config(self):
+        if 'variables' not in self.config:
+            return False
 
-    if package_name not in LOCAL_MODULES_CACHE:
-        parent = sys.modules[package_name]
+        return super().verify_config()
 
-        local_modules = set()
+    def apply(self, module, variable):
 
-        for module_finder, name, ispkg in pkgutil.iter_modules(path=parent.__path__):
-            local_modules.add(name)
+        if variable not in self.config['variables']:
+            return None
 
-        LOCAL_MODULES_CACHE[package_name] = frozenset(local_modules)
+        module_name = self.config['variables'][variable]['module']
+        attribute = self.config['variables'][variable].get('attribute')
+        return ImportCommand(module, variable, module_name, attribute)
 
-    if variable not in LOCAL_MODULES_CACHE[package_name]:
-        return None
 
-    return ImportCommand(target_module=module,
-                         target_attribute=variable,
-                         source_module='{}.{}'.format(package_name, variable),
-                         source_attribute=None)
+class LocalModulesRule(_BaseRule):
+    __slots__ = ()
+
+    _LOCAL_MODULES_CACHE = {}
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        package_name = getattr(module, '__package__', None)
+
+        if not package_name:
+            return None
+
+        if package_name not in self._LOCAL_MODULES_CACHE:
+            parent = sys.modules[package_name]
+
+            local_modules = set()
+
+            for module_finder, name, ispkg in pkgutil.iter_modules(path=parent.__path__):
+                local_modules.add(name)
+
+            self._LOCAL_MODULES_CACHE[package_name] = frozenset(local_modules)
+
+        if variable not in self._LOCAL_MODULES_CACHE[package_name]:
+            return None
+
+        return ImportCommand(target_module=module,
+                             target_attribute=variable,
+                             source_module='{}.{}'.format(package_name, variable),
+                             source_attribute=None)
+
+
+class GlobalModulesRule(_BaseRule):
+    __slots__ = ()
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        loader = pkgutil.find_loader(variable)
+
+        if loader is None:
+            return None
+
+        return ImportCommand(target_module=module,
+                             target_attribute=variable,
+                             source_module=variable,
+                             source_attribute=None)
 
 
 # packages lists for every python version can be found here:
@@ -132,87 +199,91 @@ def _collect_stdlib_modules():
     return variables
 
 
-STDLIB_MODULES = _collect_stdlib_modules()
+class StdLibRule(_BaseRule):
+    __slots__ = ('_stdlib_modules',)
+
+    _STDLIB_MODULES = _collect_stdlib_modules()
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        if variable not in self._STDLIB_MODULES:
+            return None
+
+        module_name = self._STDLIB_MODULES[variable]['module']
+        attribute = self._STDLIB_MODULES[variable].get('attribute')
+
+        return ImportCommand(module, variable, module_name, attribute)
 
 
-def rule_stdlib(config, module, variable):
+class PredefinedNamesRule(_BaseRule):
+    __slots__ = ()
 
-    if variable not in STDLIB_MODULES:
+    PREDEFINED_NAMES = frozenset({'__file__', '__annotations__'})
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        if variable in self.PREDEFINED_NAMES:
+            return NoImportCommand()
+
+        if variable in __builtins__:
+            return NoImportCommand()
+
         return None
 
-    module_name = STDLIB_MODULES[variable]['module']
-    attribute = STDLIB_MODULES[variable].get('attribute')
 
-    return ImportCommand(module, variable, module_name, attribute)
+class PrefixRule(_BaseRule):
+    __slots__ = ()
 
+    def verify_config(self):
+        if 'prefixes' not in self.config:
+            return False
 
-PREDEFINED_NAMES = frozenset({'__file__', '__annotations__'})
+        for rule in self.config['prefixes']:
+            if 'prefix' not in rule:
+                return False
 
+        return super().verify_config()
 
-def rule_predefined_names(config, module, variable):
+    def apply(self, module, variable):
 
-    if variable in PREDEFINED_NAMES:
-        return NoImportCommand()
+        for rule in self.config['prefixes']:
+            prefix = rule['prefix']
 
-    if variable in __builtins__:
-        return NoImportCommand()
-
-    return None
-
-
-def rule_prefix(config, module, variable):
-
-    for rule in config['prefixes']:
-        prefix = rule['prefix']
-
-        if not variable.startswith(prefix):
-            continue
-
-        return ImportCommand(module, variable, '{}.{}'.format(rule['module'], variable[len(prefix):]), None)
-
-    return None
-
-
-def rule_local_modules_from_parent(config, module, variable):
-
-    package_name = module.__package__
-
-    for suffix in config['suffixes']:
-
-        if not package_name.endswith(suffix):
-            continue
-
-        base_package_name = package_name[:-len(suffix)]
-
-        source_module = '{}.{}'.format(base_package_name, variable)
-
-        if discovering.find_spec(source_module) is None:
-            continue
-
-        return ImportCommand(target_module=module,
-                             target_attribute=variable,
-                             source_module=source_module,
-                             source_attribute=None)
-
-
-def rule_local_modules_from_namespace(config, module, variable):
-
-    package_name = module.__package__
-
-    for target, namespaces in config['map'].items():
-        for namespace in namespaces:
-
-            if package_name != target:
+            if not variable.startswith(prefix):
                 continue
 
-            spec = discovering.find_spec(namespace)
+            return ImportCommand(module, variable, '{}.{}'.format(rule['module'], variable[len(prefix):]), None)
 
-            if spec is None:
+        return None
+
+
+class LocalModulesFromParentRule(_BaseRule):
+    __slots__ = ()
+
+    def verify_config(self):
+        if 'suffixes' not in self.config:
+            return False
+
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        package_name = module.__package__
+
+        for suffix in self.config['suffixes']:
+
+            if not package_name.endswith(suffix):
                 continue
 
-            namespace_package = spec.parent
+            base_package_name = package_name[:-len(suffix)]
 
-            source_module = '{}.{}'.format(namespace_package, variable)
+            source_module = '{}.{}'.format(base_package_name, variable)
 
             if discovering.find_spec(source_module) is None:
                 continue
@@ -223,10 +294,48 @@ def rule_local_modules_from_namespace(config, module, variable):
                                  source_attribute=None)
 
 
-register('rule_predefined_names', rule_predefined_names)
-register('rule_local_modules', rule_local_modules)
-register('rule_custom', rule_custom)
-register('rule_stdlib', rule_stdlib)
-register('rule_prefix', rule_prefix)
-register('rule_local_modules_from_parent', rule_local_modules_from_parent)
-register('rule_local_modules_from_namespace', rule_local_modules_from_namespace)
+class LocalModulesFromNamespaceRule(_BaseRule):
+    __slots__ = ()
+
+    def verify_config(self):
+        return super().verify_config()
+
+    def apply(self, module, variable):
+
+        if 'map' not in self.config:
+            return False
+
+        package_name = module.__package__
+
+        for target, namespaces in self.config['map'].items():
+            for namespace in namespaces:
+
+                if package_name != target:
+                    continue
+
+                spec = discovering.find_spec(namespace)
+
+                if spec is None:
+                    continue
+
+                namespace_package = spec.parent
+
+                source_module = '{}.{}'.format(namespace_package, variable)
+
+                if discovering.find_spec(source_module) is None:
+                    continue
+
+                return ImportCommand(target_module=module,
+                                     target_attribute=variable,
+                                     source_module=source_module,
+                                     source_attribute=None)
+
+
+register('rule_predefined_names', PredefinedNamesRule)
+register('rule_local_modules', LocalModulesRule)
+register('rule_global_modules', GlobalModulesRule)
+register('rule_custom', CustomRule)
+register('rule_stdlib', StdLibRule)
+register('rule_prefix', PrefixRule)
+register('rule_local_modules_from_parent', LocalModulesFromParentRule)
+register('rule_local_modules_from_namespace', LocalModulesFromNamespaceRule)
