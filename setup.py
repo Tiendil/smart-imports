@@ -1,10 +1,17 @@
 
 import setuptools
 
+
+with open("README.rst", "r") as f:
+    long_description = f.read()
+
+
 setuptools.setup(
     name='smart_imports',
-    version='0.2.1',
+    version='0.2.3',
     description='automatic importing for Python modules',
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
     url='https://github.com/Tiendil/smart-imports',
     author='Aleksey Yeletsky <Tiendil>',
     author_email='a.eletsky@gmail.com',

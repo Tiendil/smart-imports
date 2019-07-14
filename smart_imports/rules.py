@@ -97,7 +97,7 @@ class NoImportCommand(ImportCommand):
         pass
 
 
-class _BaseRule:
+class BaseRule:
     __slots__ = ('config',)
 
     def __init__(self, config):
@@ -110,7 +110,7 @@ class _BaseRule:
         raise NotImplementedError
 
 
-class CustomRule(_BaseRule):
+class CustomRule(BaseRule):
     __slots__ = ()
 
     def verify_config(self):
@@ -129,7 +129,7 @@ class CustomRule(_BaseRule):
         return ImportCommand(module, variable, module_name, attribute)
 
 
-class LocalModulesRule(_BaseRule):
+class LocalModulesRule(BaseRule):
     __slots__ = ()
 
     _LOCAL_MODULES_CACHE = {}
@@ -163,7 +163,7 @@ class LocalModulesRule(_BaseRule):
                              source_attribute=None)
 
 
-class GlobalModulesRule(_BaseRule):
+class GlobalModulesRule(BaseRule):
     __slots__ = ()
 
     def verify_config(self):
@@ -190,7 +190,9 @@ def _collect_stdlib_modules():
     for compiled_module_name in sys.builtin_module_names:
         variables[compiled_module_name] = {'module': compiled_module_name}
 
-    with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'python_3_5_packages.txt')) as f:
+    with open(os.path.join(os.path.dirname(__file__),
+                           'fixtures',
+                           'python_{}_{}_packages.txt'.format(sys.version_info.major, sys.version_info.minor))) as f:
         for line in f.readlines():
             names = line.strip().split('.')
             for i in range(len(names)):
@@ -199,7 +201,7 @@ def _collect_stdlib_modules():
     return variables
 
 
-class StdLibRule(_BaseRule):
+class StdLibRule(BaseRule):
     __slots__ = ('_stdlib_modules',)
 
     _STDLIB_MODULES = _collect_stdlib_modules()
@@ -218,7 +220,7 @@ class StdLibRule(_BaseRule):
         return ImportCommand(module, variable, module_name, attribute)
 
 
-class PredefinedNamesRule(_BaseRule):
+class PredefinedNamesRule(BaseRule):
     __slots__ = ()
 
     PREDEFINED_NAMES = frozenset({'__file__', '__annotations__'})
@@ -237,7 +239,7 @@ class PredefinedNamesRule(_BaseRule):
         return None
 
 
-class PrefixRule(_BaseRule):
+class PrefixRule(BaseRule):
     __slots__ = ()
 
     def verify_config(self):
@@ -263,7 +265,7 @@ class PrefixRule(_BaseRule):
         return None
 
 
-class LocalModulesFromParentRule(_BaseRule):
+class LocalModulesFromParentRule(BaseRule):
     __slots__ = ()
 
     def verify_config(self):
@@ -294,7 +296,7 @@ class LocalModulesFromParentRule(_BaseRule):
                                  source_attribute=None)
 
 
-class LocalModulesFromNamespaceRule(_BaseRule):
+class LocalModulesFromNamespaceRule(BaseRule):
     __slots__ = ()
 
     def verify_config(self):

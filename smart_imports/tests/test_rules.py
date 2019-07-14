@@ -159,7 +159,7 @@ class TestStdLibRule(unittest.TestCase):
         self.assertEqual(self.rule._STDLIB_MODULES['os'], {'module': 'os'})
         self.assertEqual(self.rule._STDLIB_MODULES['os_path'], {'module': 'os.path'})
 
-    def test_builting_moduyles(self):
+    def test_builting_modules(self):
         self.assertTrue(set(sys.builtin_module_names).issubset(set(self.rule._STDLIB_MODULES.keys())))
 
     def test_not_system_module(self):
