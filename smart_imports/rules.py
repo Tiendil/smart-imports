@@ -190,7 +190,9 @@ def _collect_stdlib_modules():
     for compiled_module_name in sys.builtin_module_names:
         variables[compiled_module_name] = {'module': compiled_module_name}
 
-    with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'python_3_5_packages.txt')) as f:
+    with open(os.path.join(os.path.dirname(__file__),
+                           'fixtures',
+                           'python_{}_{}_packages.txt'.format(sys.version_info.major, sys.version_info.minor))) as f:
         for line in f.readlines():
             names = line.strip().split('.')
             for i in range(len(names)):
