@@ -92,7 +92,7 @@ def get(path, config_name=constants.CONFIG_FILE_NAME):
     config = None
     checked_paths = []
 
-    while path != '/':
+    while path not in ('', '/'):
 
         if path in CONFIGS_CACHE:
             config = CONFIGS_CACHE[path]
