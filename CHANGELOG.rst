@@ -10,6 +10,7 @@ This document records all notable changes to `smart_imports`.
 -------------------
 
 * Add support for Python 3.8 `gh-12 <https://github.com/Tiendil/smart-imports/issues/12>`_
+* Prevent python from determining empty directories as namespace packages `gh-13 <https://github.com/Tiendil/smart-imports/issues/13>`_
 
 -----
 0.2.3
