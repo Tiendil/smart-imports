@@ -8,7 +8,7 @@ with open("README.rst", "r") as f:
 
 setuptools.setup(
     name='smart_imports',
-    version='0.2.3',
+    version='0.2.4',
     description='automatic importing for Python modules',
     long_description=long_description,
     long_description_content_type="text/x-rst",
@@ -27,6 +27,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
 
         'Natural Language :: English',
         'Natural Language :: Russian'],

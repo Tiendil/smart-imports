@@ -31,6 +31,12 @@ SPEC_CACHE = {}
 
 def find_spec(module_name):
     if module_name not in SPEC_CACHE:
-        SPEC_CACHE[module_name] = importlib.util.find_spec(module_name)
+        spec = importlib.util.find_spec(module_name)
+
+        # prevent python from determining empty directories ('fixtures' directory, 'jinja2' templates for django) as namespace packages
+        if spec is not None and spec.origin is None:
+            spec = None
+
+        SPEC_CACHE[module_name] = spec
 
     return SPEC_CACHE[module_name]

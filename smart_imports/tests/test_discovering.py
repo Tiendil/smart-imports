@@ -10,6 +10,7 @@ class TestFindSpec(unittest.TestCase):
 
     def prepair_modules(self, base_directory):
         os.makedirs(os.path.join(base_directory, 'a', 'b', 'c'))
+        os.makedirs(os.path.join(base_directory, 'a', 'b', 'd'))
 
         with open(os.path.join(base_directory, 'a', '__init__.py'), 'w') as f:
             f.write(' ')
@@ -64,3 +65,9 @@ class TestFindSpec(unittest.TestCase):
             self.assertEqual(spec_2.name, 'a.x')
             self.assertEqual(discovering.SPEC_CACHE, {'a.b': spec_1,
                                                       'a.x': spec_2})
+
+    def test_fake_namespace_package(self):
+        with helpers.test_directory() as temp_directory:
+            self.prepair_modules(temp_directory)
+
+            self.assertEqual(discovering.find_spec('a.d'), None)
