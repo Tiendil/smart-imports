@@ -134,6 +134,10 @@ class Analyzer(ast.NodeVisitor):
             self.visit(arg.annotation)
 
     def visit_arguments(self, node):
+        if hasattr(node, 'posonlyargs'):
+            for arg in node.posonlyargs :
+                self.process_arg(arg)
+
         for arg in node.args:
             self.process_arg(arg)
 
