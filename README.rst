@@ -281,11 +281,11 @@ Rule imports module by name from the package, which associated with name prefix.
     # my_package
     # |-- __init__.py
     # |-- utils
-    # |-- |-- __init__
+    # |-- |-- __init__.py
     # |-- |-- a.py
     # |-- |-- b.py
     # |-- subpackage
-    # |-- |-- __init__
+    # |-- |-- __init__.py
     # |-- |-- c.py
 
     # c.py
@@ -318,7 +318,7 @@ If you have sub-packages with the same name in different parts of your project (
     # |-- __init__.py
     # |-- a.py
     # |-- tests
-    # |-- |-- __init__
+    # |-- |-- __init__.py
     # |-- |-- b.py
 
     # b.py
@@ -349,10 +349,10 @@ The rule allows for modules from a specified package to import by name modules f
     # my_package
     # |-- __init__.py
     # |-- subpackage_1
-    # |-- |-- __init__
+    # |-- |-- __init__.py
     # |-- |-- a.py
     # |-- subpackage_2
-    # |-- |-- __init__
+    # |-- |-- __init__.py
     # |-- |-- b.py
 
     # a.py
