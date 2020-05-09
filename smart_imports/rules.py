@@ -73,6 +73,12 @@ class ImportCommand:
 
         setattr(self.target_module, self.target_attribute, value)
 
+    def __str__(self):
+        return 'ImportCommand({}, {}, {}, {})'.format(self.target_module,
+                                                      self.target_attribute,
+                                                      self.source_module,
+                                                      self.source_attribute)
+
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
                 self.target_module == other.target_module and
@@ -145,6 +151,7 @@ class LocalModulesRule(BaseRule):
             return None
 
         if package_name not in self._LOCAL_MODULES_CACHE:
+
             parent = sys.modules[package_name]
 
             local_modules = set()
@@ -171,9 +178,9 @@ class GlobalModulesRule(BaseRule):
 
     def apply(self, module, variable):
 
-        loader = pkgutil.find_loader(variable)
+        spec = discovering.find_spec(variable)
 
-        if loader is None:
+        if spec is None:
             return None
 
         return ImportCommand(target_module=module,

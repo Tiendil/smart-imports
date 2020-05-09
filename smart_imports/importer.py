@@ -78,6 +78,9 @@ def process_module(module_config, module, variables_processor=variables_processo
                               module=module,
                               variable=variable)
 
+        if isinstance(command, rules.NoImportCommand):
+            continue
+
         if command is not None:
             commands.append(command)
             continue
@@ -93,8 +96,7 @@ def process_module(module_config, module, variables_processor=variables_processo
                                        path=module.__file__,
                                        lines=undefined_lines)
 
-    for command in commands:
-        command()
+    return commands
 
 
 def all(target_module=None, variables_processor=variables_processor):
@@ -104,6 +106,9 @@ def all(target_module=None, variables_processor=variables_processor):
 
     module_config = config.get(target_module.__file__)
 
-    process_module(module_config=module_config,
-                   module=target_module,
-                   variables_processor=variables_processor)
+    commands = process_module(module_config=module_config,
+                              module=target_module,
+                              variables_processor=variables_processor)
+
+    for command in commands:
+        command()

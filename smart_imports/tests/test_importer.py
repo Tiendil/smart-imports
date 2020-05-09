@@ -111,6 +111,10 @@ def y(z):
     return z + math.log(1)
 '''
 
+    def apply_commands(self, commands):
+        for command in commands:
+            command()
+
     def test_process_simple(self):
         module_name = 'process_simple_' + uuid.uuid4().hex
 
@@ -122,8 +126,16 @@ def y(z):
 
             self.assertEqual(getattr(module, 'math', None), None)
 
-            importer.process_module(module_config=config.DEFAULT_CONFIG,
-                                    module=module)
+            commands = importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                               module=module)
+
+            self.assertEqual(commands,
+                             [rules.ImportCommand(target_module=module,
+                                                  target_attribute='math',
+                                                  source_module='math',
+                                                  source_attribute=None)])
+
+            self.apply_commands(commands)
 
             self.assertEqual(getattr(module, 'math'), math)
 
@@ -141,8 +153,10 @@ def y(z):
             # not required to create other temp directory, since filenames do not intersect
             test_config = config.DEFAULT_CONFIG.clone(cache_dir=temp_directory)
 
-            importer.process_module(module_config=test_config,
-                                    module=module)
+            commands = importer.process_module(module_config=test_config,
+                                               module=module)
+
+            self.apply_commands(commands)
 
             self.assertEqual(getattr(module, 'math'), math)
 
@@ -168,8 +182,11 @@ def import_hook():
 
     target_module = discovering.find_target_module()
 
-    importer.process_module(module_config=config.DEFAULT_CONFIG,
-                            module=target_module)
+    commands = importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                       module=target_module)
+
+    for command in commands:
+        command()
 
 
 import_hook()
@@ -190,8 +207,12 @@ def import_hook():
 
     target_module = discovering.find_target_module()
 
-    importer.process_module(module_config=config.DEFAULT_CONFIG,
-                            module=target_module)
+    commands = importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                       module=target_module)
+
+
+    for command in commands:
+        command()
 
 
 import_hook()
@@ -209,8 +230,11 @@ def import_hook():
 
     target_module = discovering.find_target_module()
 
-    importer.process_module(module_config=config.DEFAULT_CONFIG,
-                            module=target_module)
+    commands = importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                       module=target_module)
+
+    for command in commands:
+        command()
 
 
 import_hook()
@@ -230,8 +254,12 @@ def import_hook():
 
     target_module = discovering.find_target_module()
 
-    importer.process_module(module_config=config.DEFAULT_CONFIG,
-                            module=target_module)
+    commands = importer.process_module(module_config=config.DEFAULT_CONFIG,
+                                       module=target_module)
+
+
+    for command in commands:
+        command()
 
 
 import_hook()
@@ -288,7 +316,7 @@ def z():
 
             with self.assertRaises(exceptions.NoImportFound) as error:
                 importer.process_module(module_config=config.DEFAULT_CONFIG,
-                                        module=module)
+                                               module=module)
 
             self.assertEqual(set(error.exception.arguments['lines']), {3, 6})
 
