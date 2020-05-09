@@ -26,6 +26,8 @@ No magic or monkey patching. Only standard Python functionality.
 |                                             |                                             |
 +---------------------------------------------+---------------------------------------------+
 
+`MyPy`_ supported.
+
 Summary
 =======
 
@@ -374,6 +376,20 @@ How to add custom rule?
 #. Profit.
 
 Look into the implementation of current rules, if you need an example.
+
+
+MyPY
+====
+
+Plugin for integration with MyPy implemented.
+
+MyPy config (mypy.ini) example:
+
+.. code-block:: ini
+
+   [mypy]
+   plugins = smart_imports.plugins.mypy
+
 
 Plans
 =====
