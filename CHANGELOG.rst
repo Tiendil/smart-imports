@@ -9,6 +9,8 @@ This document records all notable changes to `smart_imports`.
 0.2.6 (development)
 -------------------
 
+* Add support for Python 3.9 `gh-16 <https://github.com/Tiendil/smart-imports/issues/16>`_
+
 -----
 0.2.5
 -----
