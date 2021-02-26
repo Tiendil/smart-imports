@@ -381,7 +381,7 @@ Similar projects
 
 There are a couple of projects with a similar approach:
 
-- [autoimport](https://github.com/lyz-code/autoimport) — automatically fixes wrong import statements.
+- `autoimport <https://github.com/lyz-code/autoimport>`_ — automatically fixes wrong import statements.
 
 If you think that some projects should be listed here, feel free to make a pull request.
 
