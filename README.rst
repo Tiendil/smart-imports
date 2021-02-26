@@ -5,7 +5,6 @@
 
 |pypi| |python_versions| |test_coverege_develop|
 
-- `Gitter chat room <https://gitter.im/smart-imports/discussion>`_
 - `Changelog <https://github.com/Tiendil/smart-imports/blob/develop/CHANGELOG.rst>`_
 
 Automatically discovers & imports entities, used in the current module.
@@ -376,6 +375,15 @@ How to add custom rule?
 #. Profit.
 
 Look into the implementation of current rules, if you need an example.
+
+Similar projects
+================
+
+There are a couple of projects with a similar approach:
+
+- [autoimport](https://github.com/lyz-code/autoimport) — automatically fixes wrong import statements.
+
+If you think that some projects should be listed here, feel free to make a pull request.
 
 
 MyPY
