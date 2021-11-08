@@ -3,7 +3,7 @@
  Smart import for Python
 =========================
 
-|pypi| |python_versions| |test_coverege_develop|
+|pypi| |python_versions|
 
 - `Changelog <https://github.com/Tiendil/smart-imports/blob/develop/CHANGELOG.rst>`_
 
@@ -416,14 +416,10 @@ What I planning for ``Smart Imports``:
 I open to your suggestions. Feel free to contact me in any way.
 
 
-.. |pypi| image:: https://img.shields.io/pypi/v/smart_imports.svg?style=flat-square&label=latest%20stable%20version&reset_github_caches=9
+.. |pypi| image:: https://img.shields.io/pypi/v/smart_imports.svg?style=flat-square&label=latest%20stable%20version&reset_github_caches=10
     :target: https://pypi.python.org/pypi/smart_imports
     :alt: Latest version released on PyPi
 
-.. |python_versions| image:: https://img.shields.io/pypi/pyversions/smart_imports.svg?style=flat-square&reset_github_caches=9
+.. |python_versions| image:: https://img.shields.io/pypi/pyversions/smart_imports.svg?style=flat-square&reset_github_caches=10
     :target: https://pypi.python.org/pypi/smart_imports
     :alt: Supported Python versions
-
-.. |test_coverege_develop| image:: https://coveralls.io/repos/github/Tiendil/smart-imports/badge.svg?branch=develop&reset_github_caches=9
-    :target: https://coveralls.io/github/Tiendil/smart-imports?branch=develop
-    :alt: Test coverage in develop

@@ -5,9 +5,15 @@ Change log
 
 This document records all notable changes to `smart_imports`.
 
--------------------
-0.2.6 (development)
--------------------
+-----
+0.2.7
+-----
+
+* Add support for Python 3.10 `gh-16 <https://github.com/Tiendil/smart-imports/issues/18>`_
+
+-----
+0.2.6
+-----
 
 * Add support for Python 3.9 `gh-16 <https://github.com/Tiendil/smart-imports/issues/16>`_
 

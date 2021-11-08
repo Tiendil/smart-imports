@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "smart_imports"
+version = "0.2.7"
+description = "Automatic importing for Python modules."
+readme = "README.rst"
+repository = "https://github.com/Tiendil/smart-imports"
+authors = ["Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com>"]
+license = "BSD-3"
+include = ["*.txt", "*.json"]
+keywords = ["python", "import"]
+classifiers = [
+        "Development Status :: 5 - Production/Stable",
+
+        "Intended Audience :: Developers",
+
+        "License :: OSI Approved :: BSD License",
+
+        "Programming Language :: Python :: 3",
+
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+
+        "Natural Language :: English",
+        "Natural Language :: Russian"]
+
+[tool.poetry.dependencies]
+python = ">=3.5"

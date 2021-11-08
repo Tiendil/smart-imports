@@ -174,3 +174,29 @@ class Analyzer(ast.NodeVisitor):
             self.visit(body_node)
 
         self.pop_scope()
+
+    def visit_match_case(self, node):
+
+        self.visit(node.pattern)
+
+        if node.guard is not None:
+            self.visit(node.guard)
+
+        for body_node in node.body:
+            self.visit(body_node)
+
+    def visit_MatchAs(self, node):
+        self.register_variable_set(node.name, node.lineno)
+
+    def visit_MatchStar(self, node):
+        self.register_variable_set(node.name, node.lineno)
+
+    def visit_MatchMapping(self, node):
+        for key in node.keys:
+            self.visit(key)
+
+        for pattern in node.patterns:
+            self.visit(pattern)
+
+        if node.rest is not None:
+            self.register_variable_set(node.rest, node.lineno)
